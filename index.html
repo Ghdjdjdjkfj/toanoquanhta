@@ -38,8 +38,12 @@
 
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
-        const saved = localStorage.getItem('current_user_v10');
-        return saved ? JSON.parse(saved) : null;
+        try {
+          const saved = localStorage.getItem('current_user_v11');
+          return saved ? JSON.parse(saved) : null;
+        } catch (e) {
+          return null;
+        }
       });
 
       const [loginForm, setLoginForm] = useState({ username: '', password: '' });
@@ -83,13 +87,13 @@
 
         lecturesRef.on('value', snapshot => {
           const data = snapshot.val();
-          setLectures(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : []);
+          setLectures(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })).reverse() : []);
           setLoading(false);
         });
 
         examsRef.on('value', snapshot => {
           const data = snapshot.val();
-          setExams(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : []);
+          setExams(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })).reverse() : []);
         });
 
         studentsRef.on('value', snapshot => {
@@ -99,7 +103,7 @@
 
         submissionsRef.on('value', snapshot => {
           const data = snapshot.val();
-          setSubmissions(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : []);
+          setSubmissions(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })).reverse() : []);
         });
 
         return () => {
@@ -111,17 +115,21 @@
       }, []);
 
       useEffect(() => {
-        if (currentUser) localStorage.setItem('current_user_v10', JSON.stringify(currentUser));
-        else localStorage.removeItem('current_user_v10');
+        if (currentUser) {
+          localStorage.setItem('current_user_v11', JSON.stringify(currentUser));
+        } else {
+          localStorage.removeItem('current_user_v11');
+        }
       }, [currentUser]);
 
       useEffect(() => {
-        if (view === 'do_exam' && timeLeft > 0) {
-          const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-          return () => clearInterval(timer);
-        } else if (view === 'do_exam' && timeLeft === 0 && examResult === null) {
+        let timer;
+        if (view === 'do_exam' && timeLeft > 0 && !examResult) {
+          timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+        } else if (view === 'do_exam' && timeLeft === 0 && !examResult) {
           handleSubmitExam();
         }
+        return () => clearInterval(timer);
       }, [view, timeLeft, examResult]);
 
       const handleLogin = (e) => {
@@ -197,6 +205,7 @@
       };
 
       const handleSubmitExam = () => {
+        if (!selectedExam) return;
         let score = 0;
         selectedExam.questions.forEach((q, idx) => {
           if (userAnswers[idx] === q.correctAnswer) score++;
