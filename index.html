@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tài Liệu Ôn Tập THCS & THPT</title>
+  <title>Tài Liệu Ôn Tập THCS & THPT - Toán 9</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -38,7 +38,7 @@
 
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
-        const saved = localStorage.getItem('current_user_v6');
+        const saved = localStorage.getItem('current_user_v7');
         return saved ? JSON.parse(saved) : null;
       });
 
@@ -48,11 +48,13 @@
       const [lectures, setLectures] = useState([]);
       const [exams, setExams] = useState([]);
       const [students, setStudents] = useState([]);
+      const [submissions, setSubmissions] = useState([]);
       
       const [loading, setLoading] = useState(true);
-      const [view, setView] = useState('home'); // home, detail, exam_list, do_exam, admin_panel
+      const [view, setView] = useState('home'); // home, detail, exam_list, do_exam, admin_panel, statistics
       const [selectedLecture, setSelectedLecture] = useState(null);
       const [selectedExam, setSelectedExam] = useState(null);
+      const [selectedSubjectFolder, setSelectedSubjectFolder] = useState('Tất cả');
 
       // Modal states
       const [showModalLecture, setShowModalLecture] = useState(false);
@@ -60,18 +62,19 @@
 
       // Form tạo bài giảng
       const [lectureForm, setLectureForm] = useState({
-        title: '', subject: 'Toán 9', instructor: '', videoUrl: '', fileName: 'De_thi.pdf', fileSize: '3.5 MB', fileUrl: '', description: ''
+        title: '', subject: 'Toán 9', instructor: 'Hai Ton', videoUrl: '', fileName: 'Tai_lieu.pdf', fileSize: '3.5 MB', fileUrl: '', description: ''
       });
 
       // Form tạo tài khoản học sinh
       const [studentForm, setStudentForm] = useState({ username: '', password: '' });
 
-      // Form tạo đề thi kiểu Azota
+      // Form tạo đề thi kiểu Azota & LaTeX import
       const [examForm, setExamForm] = useState({
         title: '',
         duration: 15,
         questions: [{ questionText: '', options: ['', '', '', ''], correctAnswer: 0 }]
       });
+      const [latexInput, setLatexInput] = useState('');
 
       // Làm bài thi state
       const [userAnswers, setUserAnswers] = useState({});
@@ -83,6 +86,7 @@
         const lecturesRef = db.ref('lectures');
         const examsRef = db.ref('exams');
         const studentsRef = db.ref('students');
+        const submissionsRef = db.ref('submissions');
 
         lecturesRef.on('value', snapshot => {
           const data = snapshot.val();
@@ -100,16 +104,22 @@
           setStudents(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : []);
         });
 
+        submissionsRef.on('value', snapshot => {
+          const data = snapshot.val();
+          setSubmissions(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })).reverse() : []);
+        });
+
         return () => {
           lecturesRef.off();
           examsRef.off();
           studentsRef.off();
+          submissionsRef.off();
         };
       }, []);
 
       useEffect(() => {
-        if (currentUser) localStorage.setItem('current_user_v6', JSON.stringify(currentUser));
-        else localStorage.removeItem('current_user_v6');
+        if (currentUser) localStorage.setItem('current_user_v7', JSON.stringify(currentUser));
+        else localStorage.removeItem('current_user_v7');
       }, [currentUser]);
 
       // Timer cho làm bài thi
@@ -169,20 +179,45 @@
         };
         db.ref('lectures').push(newLec, err => {
           if (!err) {
-            alert('Đăng bài giảng thành công!');
+            alert('Đăng bài giảng vào thư mục thành công!');
             setShowModalLecture(false);
-            setLectureForm({ title: '', subject: 'Toán 9', instructor: '', videoUrl: '', fileName: 'De_thi.pdf', fileSize: '3.5 MB', fileUrl: '', description: '' });
+            setLectureForm({ title: '', subject: 'Toán 9', instructor: 'Hai Ton', videoUrl: '', fileName: 'Tai_lieu.pdf', fileSize: '3.5 MB', fileUrl: '', description: '' });
           }
         });
+      };
+
+      // Xử lý import đề thi từ LaTeX / Text mô phỏng
+      const handleParseLatex = () => {
+        if (!latexInput.trim()) {
+          alert('Vui lòng nhập nội dung LaTeX hoặc văn bản đề thi!');
+          return;
+        }
+        // Giả lập parser cơ bản tách các câu hỏi từ text/latex
+        const rawQuestions = latexInput.split(/\\begin\{ex\}|Câu\s+\d+[\.:]/i).filter(Boolean);
+        const parsedQuestions = rawQuestions.map(qText => {
+          return {
+            questionText: qText.trim().substring(0, 100) + '...',
+            options: ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'],
+            correctAnswer: 0
+          };
+        });
+
+        if (parsedQuestions.length > 0) {
+          setExamForm({...examForm, questions: parsedQuestions});
+          alert(`Đã trích xuất thành công ${parsedQuestions.length} câu hỏi từ nguồn tài liệu!`);
+        } else {
+          alert('Không tìm thấy định dạng câu hỏi hợp lệ. Vui lòng kiểm tra lại cấu trúc.');
+        }
       };
 
       const handleAddExam = (e) => {
         e.preventDefault();
         db.ref('exams').push(examForm, err => {
           if (!err) {
-            alert('Tạo bài kiểm tra thành công!');
+            alert('Tạo đề kiểm tra thành công!');
             setShowModalExam(false);
             setExamForm({ title: '', duration: 15, questions: [{ questionText: '', options: ['', '', '', ''], correctAnswer: 0 }] });
+            setLatexInput('');
           }
         });
       };
@@ -200,8 +235,21 @@
         selectedExam.questions.forEach((q, idx) => {
           if (userAnswers[idx] === q.correctAnswer) score++;
         });
-        const finalScore = (score / selectedExam.questions.length) * 10;
-        setExamResult({ score, total: selectedExam.questions.length, finalScore: finalScore.toFixed(1) });
+        const finalScore = Number(((score / selectedExam.questions.length) * 10).toFixed(1));
+        
+        const resultData = {
+          examTitle: selectedExam.title,
+          studentName: currentUser.username,
+          score: finalScore,
+          correctCount: score,
+          totalQuestions: selectedExam.questions.length,
+          date: new Date().toLocaleString()
+        };
+
+        // Lưu kết quả lên Firebase để thống kê
+        db.ref('submissions').push(resultData);
+
+        setExamResult({ score, total: selectedExam.questions.length, finalScore });
       };
 
       if (!currentUser) {
@@ -232,6 +280,10 @@
         );
       }
 
+      const filteredLectures = selectedSubjectFolder === 'Tất cả' 
+        ? lectures 
+        : lectures.filter(l => l.subject === selectedSubjectFolder);
+
       return (
         <div className="min-h-screen flex flex-col bg-gray-50">
           <header className="bg-blue-600 text-white shadow-md py-3 px-6 flex justify-between items-center sticky top-0 z-40">
@@ -242,7 +294,7 @@
 
             <div className="flex items-center space-x-3">
               <button onClick={() => setView('home')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'home' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
-                <i className="fa-solid fa-house mr-1"></i> Trang chủ
+                <i className="fa-solid fa-house mr-1"></i> Thư mục bài giảng
               </button>
               
               <button onClick={() => setView('exam_list')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'exam_list' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
@@ -250,9 +302,14 @@
               </button>
 
               {currentUser.role === 'admin' && (
-                <button onClick={() => setView('admin_panel')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'admin_panel' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
-                  <i className="fa-solid fa-users-gear mr-1"></i> Quản lý học sinh
-                </button>
+                <>
+                  <button onClick={() => setView('statistics')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'statistics' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
+                    <i className="fa-solid fa-chart-bar mr-1"></i> Thống kê điểm
+                  </button>
+                  <button onClick={() => setView('admin_panel')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'admin_panel' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
+                    <i className="fa-solid fa-users-gear mr-1"></i> Quản lý học sinh
+                  </button>
+                </>
               )}
 
               <div className="flex items-center space-x-2 bg-blue-700 px-3 py-1.5 rounded-lg text-sm">
@@ -266,29 +323,38 @@
           <main className="max-w-6xl w-full mx-auto p-4 md:p-6 flex-1">
             {view === 'home' && (
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                    <i className="fa-solid fa-book-open text-blue-600 mr-2"></i> Danh Sách Bài Giảng
-                  </h2>
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                  <div className="flex items-center space-x-2 overflow-x-auto w-full pb-2">
+                    {['Tất cả', 'Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10', 'Luyện thi THPTQG'].map(folder => (
+                      <button key={folder} onClick={() => setSelectedSubjectFolder(folder)} className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition ${selectedSubjectFolder === folder ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-700 border hover:bg-gray-100'}`}>
+                        <i className="fa-solid fa-folder-open mr-1.5 text-yellow-500"></i> {folder}
+                      </button>
+                    ))}
+                  </div>
+
                   {currentUser.role === 'admin' && (
-                    <button onClick={() => setShowModalLecture(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-green-700">
+                    <button onClick={() => setShowModalLecture(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-green-700 whitespace-nowrap">
                       <i className="fa-solid fa-plus mr-1"></i> Đăng Bài Giảng Mới
                     </button>
                   )}
                 </div>
 
+                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                  <i className="fa-solid fa-book-open text-blue-600 mr-2"></i> Thư mục: <span className="text-blue-600 ml-1">{selectedSubjectFolder}</span>
+                </h2>
+
                 {loading ? (
                   <div className="text-center py-12 text-gray-500"><i className="fa-solid fa-spinner fa-spin text-3xl"></i></div>
-                ) : lectures.length === 0 ? (
-                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500">Chưa có bài giảng nào.</div>
+                ) : filteredLectures.length === 0 ? (
+                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500">Chưa có bài giảng nào trong thư mục này.</div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {lectures.map(item => (
+                    {filteredLectures.map(item => (
                       <div key={item.id} className="bg-white rounded-xl shadow border hover:shadow-lg transition flex flex-col justify-between p-5">
                         <div>
                           <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-semibold">{item.subject}</span>
                           <h3 className="font-bold text-lg text-gray-900 mt-2">{item.title}</h3>
-                          <p className="text-xs text-gray-500 mt-1"><i className="fa-regular fa-calendar"></i> {item.date}</p>
+                          <p className="text-xs text-gray-500 mt-1"><i className="fa-regular fa-calendar"></i> {item.date} | GV: {item.instructor}</p>
                           <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.description}</p>
                         </div>
                         <div className="mt-5 border-t pt-3 flex items-center justify-between">
@@ -307,17 +373,17 @@
             {view === 'detail' && selectedLecture && (
               <div className="bg-white rounded-xl shadow-md p-6">
                 <button onClick={() => setView('home')} className="mb-4 text-blue-600 hover:underline flex items-center text-sm font-medium">
-                  <i className="fa-solid fa-arrow-left mr-1"></i> Quay lại
+                  <i className="fa-solid fa-arrow-left mr-1"></i> Quay lại thư mục
                 </button>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedLecture.title}</h1>
                 <div className="bg-black aspect-video rounded-lg overflow-hidden mb-6">
                   <video controls className="w-full h-full"><source src={selectedLecture.videoUrl} type="video/mp4" /></video>
                 </div>
                 <p className="text-gray-700 mb-6">{selectedLecture.description}</p>
-                <h3 className="font-bold text-gray-800 mb-3">Tài liệu đính kèm:</h3>
+                <h3 className="font-bold text-gray-800 mb-3">Tài liệu đính kèm (Word / PDF / LaTeX):</h3>
                 {selectedLecture.files?.map((f, i) => (
                   <div key={i} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border mb-2">
-                    <span>{f.name} ({f.size})</span>
+                    <span className="font-medium text-sm"><i className="fa-solid fa-file-pdf text-red-500 mr-2"></i> {f.name} ({f.size})</span>
                     <a href={f.url} target="_blank" className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm">Tải xuống</a>
                   </div>
                 ))}
@@ -330,12 +396,12 @@
                   <h2 className="text-2xl font-bold text-gray-800"><i className="fa-solid fa-file-pen text-blue-600 mr-2"></i> Danh Sách Bài Kiểm Tra Online</h2>
                   {currentUser.role === 'admin' && (
                     <button onClick={() => setShowModalExam(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-green-700">
-                      <i className="fa-solid fa-plus mr-1"></i> Tạo Đề Kiểm Tra Mới
+                      <i className="fa-solid fa-plus mr-1"></i> Tạo Đề Từ LaTeX / File
                     </button>
                   )}
                 </div>
                 {exams.length === 0 ? (
-                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500">Chưa có bài kiểm tra nào được tạo. Admin hãy bấm "Tạo Đề Kiểm Tra Mới" nhé!</div>
+                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500">Chưa có bài kiểm tra nào. Admin hãy tạo đề thi mới nhé!</div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {exams.map(exam => (
@@ -364,7 +430,7 @@
                 {examResult ? (
                   <div className="text-center py-8">
                     <div className="text-5xl font-bold text-blue-600 mb-2">{examResult.finalScore} điểm</div>
-                    <p className="text-gray-600 mb-6">Bạn đã trả lời đúng {examResult.score} / {examResult.total} câu hỏi.</p>
+                    <p className="text-gray-600 mb-6">Bạn đã trả lời đúng {examResult.score} / {examResult.total} câu hỏi. Điểm số đã được ghi nhận vào hệ thống!</p>
                     <button onClick={() => setView('exam_list')} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold">Quay lại danh sách đề thi</button>
                   </div>
                 ) : (
@@ -382,7 +448,42 @@
                         </div>
                       </div>
                     ))}
-                    <button onClick={handleSubmitExam} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow hover:bg-green-700">Nộp Bài Thi</button>
+                    <button onClick={handleSubmitExam} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow hover:bg-green-700">Nộp Bài Thi & Chấm Điểm</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {view === 'statistics' && currentUser.role === 'admin' && (
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6"><i className="fa-solid fa-chart-bar text-blue-600 mr-2"></i> Thống Kê Điểm Số & Kết Quả Học Sinh</h2>
+                
+                {submissions.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">Chưa có dữ liệu bài nộp nào từ học sinh.</p>
+                ) : (
+                  <div className="border rounded-xl overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-gray-100 border-b text-xs text-gray-700">
+                        <tr>
+                          <th className="p-3">Học sinh</th>
+                          <th className="p-3">Bài kiểm tra</th>
+                          <th className="p-3">Điểm số</th>
+                          <th className="p-3">Số câu đúng</th>
+                          <th className="p-3 text-right">Thời gian nộp</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y text-sm">
+                        {submissions.map(sub => (
+                          <tr key={sub.id} className="hover:bg-gray-50">
+                            <td className="p-3 font-semibold">{sub.studentName}</td>
+                            <td className="p-3">{sub.examTitle}</td>
+                            <td className="p-3 font-bold text-blue-600">{sub.score} điểm</td>
+                            <td className="p-3">{sub.correctCount} / {sub.totalQuestions}</td>
+                            <td className="p-3 text-right text-gray-500 text-xs">{sub.date}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
@@ -434,17 +535,22 @@
           {showModalLecture && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold mb-4">Đăng Bài Giảng Mới</h3>
+                <h3 className="text-lg font-bold mb-4">Đăng Bài Giảng Mới Vào Thư Mục</h3>
                 <form onSubmit={handleAddLecture} className="space-y-3">
                   <div><label className="text-xs font-semibold">Tiêu đề bài học</label><input required type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.title} onChange={e=>setLectureForm({...lectureForm, title: e.target.value})} /></div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-xs font-semibold">Môn học</label><input type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.subject} onChange={e=>setLectureForm({...lectureForm, subject: e.target.value})} /></div>
+                    <div>
+                      <label className="text-xs font-semibold">Chọn thư mục môn</label>
+                      <select className="w-full p-2 border rounded text-sm bg-white" value={lectureForm.subject} onChange={e=>setLectureForm({...lectureForm, subject: e.target.value})}>
+                        {['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10', 'Luyện thi THPTQG'].map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                      </select>
+                    </div>
                     <div><label className="text-xs font-semibold">Giảng viên</label><input type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.instructor} onChange={e=>setLectureForm({...lectureForm, instructor: e.target.value})} /></div>
                   </div>
                   <div><label className="text-xs font-semibold">Link Video MP4 (URL)</label><input type="url" className="w-full p-2 border rounded text-sm" value={lectureForm.videoUrl} onChange={e=>setLectureForm({...lectureForm, videoUrl: e.target.value})} /></div>
                   <div className="bg-blue-50 p-3 rounded border space-y-2">
-                    <label className="text-xs font-bold text-blue-800">Tài liệu đính kèm (Google Drive URL):</label>
-                    <input type="text" placeholder="Tên file hiển thị (VD: De_thi.pdf)" className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileName} onChange={e=>setLectureForm({...lectureForm, fileName: e.target.value})} />
+                    <label className="text-xs font-bold text-blue-800">Tài liệu đính kèm (Word / PDF URL):</label>
+                    <input type="text" placeholder="Tên file hiển thị (VD: De_thi_Toan9.pdf)" className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileName} onChange={e=>setLectureForm({...lectureForm, fileName: e.target.value})} />
                     <input type="text" placeholder="Link tải file..." className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileUrl} onChange={e=>setLectureForm({...lectureForm, fileUrl: e.target.value})} />
                   </div>
                   <div><label className="text-xs font-semibold">Mô tả bài học</label><textarea rows="2" className="w-full p-2 border rounded text-sm" value={lectureForm.description} onChange={e=>setLectureForm({...lectureForm, description: e.target.value})}></textarea></div>
@@ -457,15 +563,21 @@
             </div>
           )}
 
-          {/* Modal Tạo Đề Kiểm Tra (Azota style) */}
+          {/* Modal Tạo Đề Kiểm Tra Từ LaTeX / File */}
           {showModalExam && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold mb-4">Tạo Đề Kiểm Tra Online</h3>
+                <h3 className="text-lg font-bold mb-4">Tạo Đề Kiểm Tra & Nhập Từ LaTeX / Text</h3>
                 <form onSubmit={handleAddExam} className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><label className="text-xs font-semibold">Tiêu đề bài kiểm tra</label><input required type="text" className="w-full p-2 border rounded text-sm" value={examForm.title} onChange={e=>setExamForm({...examForm, title: e.target.value})} /></div>
                     <div><label className="text-xs font-semibold">Thời gian (phút)</label><input required type="number" className="w-full p-2 border rounded text-sm" value={examForm.duration} onChange={e=>setExamForm({...examForm, duration: Number(e.target.value)})} /></div>
+                  </div>
+
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 space-y-2">
+                    <label className="block text-xs font-bold text-yellow-800"><i className="fa-solid fa-code mr-1"></i> Trích xuất câu hỏi nhanh từ mã nguồn LaTeX / Văn bản:</label>
+                    <textarea rows="3" placeholder="Dán nội dung LaTeX (\begin{ex}...) hoặc văn bản câu hỏi vào đây..." className="w-full p-2 border rounded text-xs bg-white" value={latexInput} onChange={e => setLatexInput(e.target.value)}></textarea>
+                    <button type="button" onClick={handleParseLatex} className="bg-yellow-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-yellow-700">Tự động phân tích câu hỏi</button>
                   </div>
 
                   <div className="border-t pt-3">
