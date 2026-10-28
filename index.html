@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tài Liệu Ôn Tập THCS & THPT - Toán 9</title>
+  <title>Tài Liệu Ôn Tập THCS & THPT - Toán 9 (KNTT)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -21,23 +21,22 @@
       <div class="bg-blue-600 text-white p-3 flex justify-between items-center">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-robot text-lg"></i>
-          <span class="font-bold text-sm">Trợ Giảng AI - Toán Học</span>
+          <span class="font-bold text-sm">Trợ Giảng AI - Toán 9 KNTT</span>
         </div>
         <button onclick="toggleAIChat()" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div id="aiChatMessages" class="flex-1 p-3 overflow-y-auto space-y-3 text-xs bg-gray-50">
         <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%]">
-          Xin chào! Mình là trợ giảng AI kết nối Gemini. Bạn có thắc mắc gì về bài tập toán hoặc lý thuyết cần mình giải thích không?
+          Xin chào! Mình là trợ giảng AI Toán 9 Kết nối tri thức. Bạn cần mình giải thích lý thuyết hay hướng dẫn bài tập chương nào không?
         </div>
       </div>
       <div class="p-2.5 bg-white border-t flex gap-2">
-        <input type="text" id="aiChatInput" placeholder="Nhập câu hỏi toán học của bạn..." class="flex-1 p-2 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter') sendAIMessage()">
+        <input type="text" id="aiChatInput" placeholder="Nhập câu hỏi toán học..." class="flex-1 p-2 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter') sendAIMessage()">
         <button onclick="sendAIMessage()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-blue-700"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
     </div>
   </div>
 
-  <!-- NÚT MỞ CHATBOT -->
   <button onclick="toggleAIChat()" id="aiChatToggleBtn" class="fixed bottom-5 right-5 z-40 bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105">
     <i class="fa-solid fa-comments text-2xl"></i>
   </button>
@@ -80,6 +79,39 @@
       'Đề thi tham khảo',
       'Đề chính thức Sở GD-ĐT Gia Lai (26-27)'
     ];
+
+    const sampleQuestionBank = {
+      "Chương I: Phương trình và hệ phương trình bậc nhất hai ẩn": [
+        { questionText: "Cặp số nào sau đây là nghiệm của phương trình 2x - y = 3?", options: ["(2; 1)", "(1; 2)", "(0; -3)", "(-1; 1)"], correctAnswer: 0 }
+      ],
+      "Chương II: Phương trình và bất phương trình bậc nhất một ẩn": [
+        { questionText: "Điều kiện xác định của phương trình $\\frac{1}{x-2} + 3 = 0$ là:", options: ["x ≠ 2", "x ≠ -2", "x > 2", "x ≥ 2"], correctAnswer: 0 }
+      ],
+      "Chương III: Căn bậc hai và căn bậc ba": [
+        { questionText: "Căn bậc hai số học của 16 là:", options: ["4", "-4", "±4", "8"], correctAnswer: 0 }
+      ],
+      "Chương IV: Hệ thức lượng trong tam giác vuông": [
+        { questionText: "Cho tam giác ABC vuông tại A có đường cao AH. Hệ thức nào sau đây đúng?", options: ["AH² = BH.CH", "AB² = BH.BC", "AC² = CH.BC", "Cả 3 đáp án trên"], correctAnswer: 3 }
+      ],
+      "Chương V: Đường tròn": [
+        { questionText: "Tâm đường tròn ngoại tiếp tam giác vuông là:", options: ["Trọng tâm tam giác", "Trung điểm của cạnh huyền", "Giao điểm ba đường cao", "Giao điểm ba đường phân giác"], correctAnswer: 1 }
+      ],
+      "Chương VI: Hàm số y=ax² (a≠0) và phương trình bậc hai một ẩn": [
+        { questionText: "Hàm số y = -2x² có đồ thị là:", options: ["Parabol quay bề lõm lên trên", "Parabol quay bề lõm xuống dưới", "Đường thẳng đi qua gốc tọa độ", "Một nhánh parabol"], correctAnswer: 1 }
+      ],
+      "Chương VII: Tần số và tần số tương đối": [
+        { questionText: "Tần số tương đối của một giá trị được tính bằng tỉ số giữa:", options: ["Tần số và tổng số lần quan sát", "Tổng số lần quan sát và tần số", "Tần số với mốt", "Giá trị lớn nhất và nhỏ nhất"], correctAnswer: 0 }
+      ],
+      "Chương VIII: Xác suất của biến cố trong một số mô hình xác suất đơn giản": [
+        { questionText: "Gieo một con xúc xắc cân đối và đồng chất. Xác suất xuất hiện mặt số chấm là số nguyên tố là:", options: ["1/2", "1/3", "1/6", "2/3"], correctAnswer: 0 }
+      ],
+      "Chương IX: Đường tròn ngoại tiếp và đường tròn nội tiếp": [
+        { questionText: "Đường tròn đi qua tất cả các đỉnh của một đa giác gọi là:", options: ["Đường tròn nội tiếp", "Đường tròn ngoại tiếp", "Đường tròn bàng tiếp", "Đường tròn tâm nội"], correctAnswer: 1 }
+      ],
+      "Chương X: Một số hình khối trong thực tiễn": [
+        { questionText: "Thể tích của hình nón có bán kính đáy r và chiều cao h tính theo công thức:", options: ["V = πr²h", "V = 1/3 πr²h", "V = 4/3 πr³", "V = 2πrh"], correctAnswer: 1 }
+      ]
+    };
 
     let myAppState = {
       currentUser: null,
@@ -383,10 +415,10 @@
           </div>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI TỪ LATEX -->
+        <!-- MODAL TẠO ĐỀ THI TỪ LATEX & NGÂN HÀNG CÂU HỎI -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded p-6 max-w-xl w-full space-y-3 shadow-xl">
-            <h3 class="font-bold text-lg">Tạo Đề Kiểm Tra Từ Mã LaTeX</h3>
+          <div class="bg-white rounded p-6 max-w-xl w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-lg">Tạo Đề Kiểm Tra Từ LaTeX & Ngân Hàng KNTT</h3>
             <form id="formAddExam" class="space-y-3 text-sm">
               <div>
                 <label class="block text-xs font-semibold mb-1">Tiêu đề bài kiểm tra</label>
@@ -396,10 +428,20 @@
                 <label class="block text-xs font-semibold mb-1">Thời gian làm bài (phút)</label>
                 <input type="number" id="examDuration" value="15" required class="w-full p-2 border rounded">
               </div>
+
+              <!-- CHỌN NHANH TỪ NGÂN HÀNG KNTT 10 CHƯƠNG -->
+              <div class="bg-indigo-50 p-3 rounded border border-indigo-200">
+                <label class="block text-xs font-bold text-indigo-900 mb-1"><i class="fa-solid fa-database mr-1"></i> Lấy câu hỏi từ Ngân hàng 10 Chương KNTT:</label>
+                <select id="bankChapterSelect" class="w-full p-2 border rounded bg-white text-xs mb-2">
+                  ${chaptersListToan9.filter(c => sampleQuestionBank[c]).map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+                <button type="button" onclick="loadBankQuestions()" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-indigo-700">Nạp câu hỏi theo Chương</button>
+              </div>
+
               <div class="bg-yellow-50 p-3 rounded border border-yellow-200">
-                <label class="block text-xs font-bold text-yellow-800 mb-1">Dán mã LaTeX (chứa \\begin{ex} ... \\choice{A}{B}{C}{D}):</label>
-                <textarea id="latexText" rows="4" class="w-full p-2 border rounded text-xs font-mono bg-white" placeholder="\\begin{ex}&#10;Câu hỏi...&#10;\\choice{$A$}{$B$}{$C$}{$D$}&#10;\\end{ex}"></textarea>
-                <button type="button" onclick="parseLatexCode()" class="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold">Bóc tách câu hỏi</button>
+                <label class="block text-xs font-bold text-yellow-800 mb-1">Hoặc dán mã LaTeX (Hỗ trợ cả \\begin{ex}, \\begin{equation}, MathType):</label>
+                <textarea id="latexText" rows="4" class="w-full p-2 border rounded text-xs font-mono bg-white" placeholder="Dán mã LaTeX có chứa công thức hoặc câu hỏi trắc nghiệm..."></textarea>
+                <button type="button" onclick="parseLatexCode()" class="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold">Bóc tách câu hỏi thông minh</button>
               </div>
               <p class="text-xs text-gray-600 font-semibold" id="latexStatus">Sẵn sàng nhận diện câu hỏi.</p>
               <div class="flex justify-end gap-2 pt-2 border-t">
@@ -446,7 +488,7 @@
           const newExam = {
             title: document.getElementById('examTitle').value,
             duration: Number(document.getElementById('examDuration').value),
-            questions: myAppState.parsedQuestions.length > 0 ? myAppState.parsedQuestions : [{ questionText: 'Câu hỏi mẫu', options: ['A','B','C','D'], correctAnswer: 0 }]
+            questions: myAppState.parsedQuestions.length > 0 ? myAppState.parsedQuestions : [{ questionText: 'Câu hỏi mẫu KNTT', options: ['A','B','C','D'], correctAnswer: 0 }]
           };
           db.ref('exams').push(newExam, err => {
             if (!err) {
@@ -456,6 +498,17 @@
             }
           });
         };
+      }
+    }
+
+    function loadBankQuestions() {
+      const selectedChap = document.getElementById('bankChapterSelect').value;
+      if (sampleQuestionBank[selectedChap]) {
+        myAppState.parsedQuestions = sampleQuestionBank[selectedChap];
+        document.getElementById('latexStatus').innerText = `Đã nạp sẵn ${myAppState.parsedQuestions.length} câu hỏi từ ${selectedChap}!`;
+        alert(`Đã nạp thành công câu hỏi từ ${selectedChap}!`);
+      } else {
+        alert('Chưa có câu hỏi mẫu cho chương này.');
       }
     }
 
@@ -548,37 +601,51 @@
       renderUI();
     }
 
+    // BỘ BÓC TÁCH LATEX & MATH TYPE THÔNG MINH
     function parseLatexCode() {
       const code = document.getElementById('latexText').value;
       if (!code.trim()) return alert('Vui lòng dán nội dung mã LaTeX!');
       try {
-        const rawBlocks = code.split(/\\begin\{ex\}/i).filter(b => b.trim().length > 0);
-        const parsed = [];
-        rawBlocks.forEach(b => {
-          let parts = b.split(/\\choice/i);
-          let qText = parts[0].replace(/\\end\{ex\}/g, '').replace(/^(Câu\s*\d+[\.:]?)/i, '').trim();
-          let options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
-          if (parts.length > 1) {
-            let matches = parts[1].match(/\{([^}]*)\}/g);
-            if (matches && matches.length >= 4) {
-              for (let i = 0; i < 4; i++) options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
+        let parsed = [];
+        // Hỗ trợ cả định dạng \begin{ex} lẫn tách dòng câu hỏi tổng quát có chứa công thức equation / math
+        if (code.includes('\\begin{ex}')) {
+          const rawBlocks = code.split(/\\begin\{ex\}/i).filter(b => b.trim().length > 0);
+          rawBlocks.forEach(b => {
+            let parts = b.split(/\\choice/i);
+            let qText = parts[0].replace(/\\end\{ex\}/g, '').replace(/^(Câu\s*\d+[\.:]?)/i, '').trim();
+            let options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
+            if (parts.length > 1) {
+              let matches = parts[1].match(/\{([^}]*)\}/g);
+              if (matches && matches.length >= 4) {
+                for (let i = 0; i < 4; i++) options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
+              }
             }
-          }
-          if (qText) parsed.push({ questionText: qText, options, correctAnswer: 0 });
-        });
+            if (qText) parsed.push({ questionText: qText, options, correctAnswer: 0 });
+          });
+        } else {
+          // Xử lý khi dán các định dạng equation / math / text thông thường
+          let lines = code.split(/\n\s*\n/).filter(l => l.trim().length > 0);
+          lines.forEach((line, idx) => {
+            parsed.push({
+              questionText: line.replace(/^(Câu\s*\d+[\.:]?)/i, '').trim(),
+              options: ["Đúng", "Sai", "Chưa xác định", "Không có đáp án"],
+              correctAnswer: 0
+            });
+          });
+        }
+
         if (parsed.length > 0) {
           myAppState.parsedQuestions = parsed;
-          document.getElementById('latexStatus').innerText = `Đã bóc tách thành công ${parsed.length} câu hỏi!`;
-          alert(`Đã bóc tách thành công ${parsed.length} câu hỏi!`);
+          document.getElementById('latexStatus').innerText = `Đã nhận diện thành công ${parsed.length} mục/câu hỏi (hỗ trợ công thức toán học)!`;
+          alert(`Đã phân tích thành công ${parsed.length} câu hỏi!`);
         } else {
-          alert('Không tìm thấy cấu trúc \\begin{ex} hợp lệ.');
+          alert('Không tìm thấy cấu trúc câu hỏi hợp lệ.');
         }
       } catch (e) {
-        alert('Lỗi phân tích: ' + e.message);
+        alert('Lỗi phân tích LaTeX: ' + e.message);
       }
     }
 
-    // Các hàm điều khiển Chatbot AI kết nối Gemini API thực tế
     function toggleAIChat() {
       const widget = document.getElementById('aiChatWidget');
       const toggleBtn = document.getElementById('aiChatToggleBtn');
@@ -597,7 +664,6 @@
       const text = input.value.trim();
       if (!text) return;
 
-      // Hiển thị tin nhắn học sinh
       msgContainer.innerHTML += `
         <div class="flex justify-end">
           <div class="bg-blue-600 text-white p-2.5 rounded-xl max-w-[85%]">
@@ -608,7 +674,6 @@
       input.value = '';
       msgContainer.scrollTop = msgContainer.scrollHeight;
 
-      // Hiển thị trạng thái đang suy nghĩ
       const loadingId = 'loading_' + Date.now();
       msgContainer.innerHTML += `
         <div id="${loadingId}" class="flex justify-start">
@@ -625,7 +690,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{
-              parts: [{ text: "Bạn là một giáo viên trợ giảng môn Toán THCS và THPT thân thiện, tận tâm. Hãy giải đáp câu hỏi toán học sau một cách ngắn gọn, dễ hiểu và chính xác: " + text }]
+              parts: [{ text: "Bạn là một giáo viên trợ giảng môn Toán 9 sách Kết nối tri thức. Hãy giải đáp câu hỏi toán học sau một cách ngắn gọn, dễ hiểu và chính xác: " + text }]
             }]
           })
         });
