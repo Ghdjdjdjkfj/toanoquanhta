@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tài Liệu Ôn Tập THCS & THPT</title>
+  <title>Tài Liệu Ôn Tập THCS & THPT - Toán 9</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -30,7 +30,31 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // State ứng dụng
+    // Danh sách Chương và Mục chuẩn theo hình ghi tay
+    const chaptersListToan9 = [
+      'Tất cả',
+      'Chương I: Phương trình và hệ phương trình bậc nhất hai ẩn',
+      'Chương II: Phương trình và bất phương trình bậc nhất một ẩn',
+      'Chương III: Căn bậc hai và căn bậc ba',
+      'Chương IV: Hệ thức lượng trong tam giác vuông',
+      'Chương V: Đường tròn',
+      'Chương VI: Hàm số y=ax² (a≠0) và phương trình bậc hai một ẩn',
+      'Chương VII: Tần số và tần số tương đối',
+      'Chương VIII: Xác suất của biến cố trong một số mô hình xác suất đơn giản',
+      'Chương IX: Đường tròn ngoại tiếp và đường tròn nội tiếp',
+      'Chương X: Một số hình khối trong thực tiễn',
+      'Giữa kỳ I',
+      'Cuối kỳ I',
+      'Giữa kỳ II',
+      'Cuối kỳ II',
+      'Trắc nghiệm Đề',
+      'Trắc nghiệm',
+      'Bài tập tự luyện',
+      'Chủ đề ôn thi vào 10',
+      'Đề thi tham khảo',
+      'Đề chính thức Sở GD-ĐT Gia Lai (26-27)'
+    ];
+
     let state = {
       currentUser: null,
       view: 'home',
@@ -43,7 +67,6 @@
       parsedQuestions: []
     };
 
-    // Khởi tạo và lắng nghe dữ liệu từ Firebase
     function init() {
       db.ref('lectures').on('value', snap => {
         const d = snap.val();
@@ -70,11 +93,10 @@
     function render() {
       const app = document.getElementById('app');
       
-      // Màn hình Đăng nhập
       if (!state.currentUser) {
         app.innerHTML = `
           <div class="min-h-screen bg-blue-600 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 bg-white">
+            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
               <h1 class="text-2xl font-bold text-center mb-1 text-gray-800">Tài Liệu Ôn Tập THCS & THPT</h1>
               <p class="text-center text-sm text-gray-500 mb-6">Facebook: Hai Ton</p>
               <form id="loginForm" class="space-y-4">
@@ -107,7 +129,6 @@
         return;
       }
 
-      // Thanh Header
       let navButtons = `
         <button onclick="changeView('home')" class="hover:underline font-semibold">Thư mục</button>
         <button onclick="changeView('exam_list')" class="hover:underline font-semibold">Kiểm tra</button>
@@ -121,10 +142,8 @@
 
       let mainContent = '';
 
-      // TRANG THƯ MỤC BÀI GIẢNG
       if (state.view === 'home') {
-        const subjects = ['Tất cả', 'Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
-        const chapters = ['Tất cả', 'Chương I', 'Chương II', 'Chương III', 'Chương IV', 'Chương V'];
+        const subjects = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
 
         const filteredLectures = state.lectures.filter(l => {
           const mSub = state.selectedSubject === 'Tất cả' || l.subject === state.selectedSubject;
@@ -140,9 +159,11 @@
             ${state.currentUser.role === 'admin' ? `<button onclick="openModal('modalLec')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Đăng Bài Giảng</button>` : ''}
           </div>
 
-          <div class="bg-white p-3 rounded border mb-6 flex gap-2 overflow-x-auto items-center text-xs">
-            <span class="font-bold text-gray-500">Chương:</span>
-            ${chapters.map(c => `<button onclick="setChapter('${c}')" class="px-3 py-1 rounded ${state.selectedChapter === c ? 'bg-indigo-600 text-white' : 'bg-gray-100'}">${c}</button>`).join('')}
+          <div class="bg-white p-3 rounded border mb-6 space-y-2">
+            <span class="font-bold text-xs text-blue-700 uppercase tracking-wide block border-b pb-1"><i class="fa-solid fa-list-ul mr-1"></i> Danh mục bài học & chủ đề (${state.selectedSubject}):</span>
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              ${chaptersListToan9.map(c => `<button onclick="setChapter('${c.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded text-xs font-medium transition ${state.selectedChapter === c ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">${c}</button>`).join('')}
+            </div>
           </div>
 
           ${filteredLectures.length === 0 ? `<p class="text-center text-gray-500 py-10 bg-white rounded border">Chưa có bài giảng nào trong mục này.</p>` : `
@@ -150,12 +171,13 @@
               ${filteredLectures.map(l => `
                 <div class="bg-white p-4 rounded shadow border flex flex-col justify-between">
                   <div>
-                    <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">${l.subject || 'Toán'} - ${l.chapter || 'Chương I'}</span>
-                    <h3 class="font-bold text-base mt-2">${l.title}</h3>
+                    <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">${l.subject || 'Toán 9'}</span>
+                    <p class="text-[11px] text-indigo-600 font-semibold mt-1 truncate">${l.chapter || ''}</p>
+                    <h3 class="font-bold text-base mt-1">${l.title}</h3>
                     <p class="text-xs text-gray-500 mt-1">GV: ${l.instructor || 'Hai Ton'}</p>
                     <p class="text-xs text-gray-600 mt-2 line-clamp-2">${l.description || ''}</p>
                   </div>
-                  <button onclick="viewLecture('${l.id}')" class="mt-4 bg-blue-600 text-white py-1.5 rounded text-xs font-semibold hover:bg-blue-700">Vào học</button>
+                  <button onclick="alert('Đang mở bài giảng!')" class="mt-4 bg-blue-600 text-white py-1.5 rounded text-xs font-semibold hover:bg-blue-700">Vào học</button>
                 </div>
               `).join('')}
             </div>
@@ -163,7 +185,6 @@
         `;
       }
 
-      // TRANG DANH SÁCH KIỂM TRA
       if (state.view === 'exam_list') {
         mainContent = `
           <div class="flex justify-between items-center mb-6">
@@ -178,7 +199,7 @@
                     <h3 class="font-bold">${e.title}</h3>
                     <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.questions ? e.questions.length : 0} câu hỏi</p>
                   </div>
-                  <button onclick="alert('Bắt đầu làm bài thi!')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Làm bài</button>
+                  <button onclick="alert('Bắt đầu làm bài!')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Làm bài</button>
                 </div>
               `).join('')}
             </div>
@@ -186,7 +207,6 @@
         `;
       }
 
-      // TRANG THỐNG KÊ
       if (state.view === 'statistics') {
         mainContent = `
           <div class="bg-white p-6 rounded shadow">
@@ -203,7 +223,6 @@
         `;
       }
 
-      // TRANG QUẢN LÝ HỌC SINH
       if (state.view === 'admin_panel') {
         mainContent = `
           <div class="bg-white p-6 rounded shadow">
@@ -243,7 +262,7 @@
 
         <!-- MODAL ĐĂNG BÀI GIẢNG -->
         <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded p-6 max-w-md w-full space-y-3 shadow-xl">
+          <div class="bg-white rounded p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg">Đăng Bài Giảng Mới</h3>
             <form id="formAddLec" class="space-y-3 text-sm">
               <div>
@@ -262,12 +281,9 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold mb-1">Chương</label>
+                  <label class="block text-xs font-semibold mb-1">Chương / Mục</label>
                   <select id="lecChapter" class="w-full p-2 border rounded bg-white">
-                    <option value="Chương I">Chương I</option>
-                    <option value="Chương II">Chương II</option>
-                    <option value="Chương III">Chương III</option>
-                    <option value="Chương IV">Chương IV</option>
+                    ${chaptersListToan9.filter(c => c !== 'Tất cả').map(c => `<option value="${c}">${c}</option>`).join('')}
                   </select>
                 </div>
               </div>
@@ -319,7 +335,6 @@
         </div>
       `;
 
-      // Gán sự kiện sau khi Render
       if (document.getElementById('addStuForm')) {
         document.getElementById('addStuForm').onsubmit = (e) => {
           e.preventDefault();
@@ -372,7 +387,6 @@
       }
     }
 
-    // Các hàm xử lý giao diện
     function changeView(v) { state.view = v; render(); }
     function setSubject(s) { state.selectedSubject = s; render(); }
     function setChapter(c) { state.selectedChapter = c; render(); }
@@ -381,7 +395,6 @@
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function deleteStudent(id) { if(confirm('Xóa học sinh này?')) db.ref('students/' + id).remove(); }
 
-    // Thuật toán tách LaTeX
     function parseLatexCode() {
       const code = document.getElementById('latexText').value;
       if (!code.trim()) return alert('Vui lòng dán nội dung mã LaTeX!');
@@ -412,7 +425,6 @@
       }
     }
 
-    // Chạy chương trình
     init();
   </script>
 </body>
