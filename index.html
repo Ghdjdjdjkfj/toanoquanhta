@@ -39,7 +39,7 @@
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
         try {
-          const saved = localStorage.getItem('current_user_v12');
+          const saved = localStorage.getItem('current_user_v13');
           return saved ? JSON.parse(saved) : null;
         } catch (e) {
           return null;
@@ -59,14 +59,12 @@
       const [selectedLecture, setSelectedLecture] = useState(null);
       const [selectedExam, setSelectedExam] = useState(null);
       
-      // Quản lý thư mục cấp 1 và Chương cấp 2
       const [selectedSubjectFolder, setSelectedSubjectFolder] = useState('Toán 9');
       const [selectedChapter, setSelectedChapter] = useState('Tất cả');
 
       const [showModalLecture, setShowModalLecture] = useState(false);
       const [showModalExam, setShowModalExam] = useState(false);
 
-      // Form bài giảng có thêm trường Chương học
       const [lectureForm, setLectureForm] = useState({
         title: '', 
         subject: 'Toán 9', 
@@ -86,6 +84,7 @@
         duration: 15,
         questions: [{ questionText: '', options: ['', '', '', ''], correctAnswer: 0 }]
       });
+      const [latexInput, setLatexInput] = useState('');
 
       const [userAnswers, setUserAnswers] = useState({});
       const [timeLeft, setTimeLeft] = useState(0);
@@ -128,9 +127,9 @@
 
       useEffect(() => {
         if (currentUser) {
-          localStorage.setItem('current_user_v12', JSON.stringify(currentUser));
+          localStorage.setItem('current_user_v13', JSON.stringify(currentUser));
         } else {
-          localStorage.removeItem('current_user_v12');
+          localStorage.removeItem('current_user_v13');
         }
       }, [currentUser]);
 
@@ -197,6 +196,51 @@
         });
       };
 
+      // Thuật toán bóc tách LaTeX chuẩn (\begin{ex} ... \choice {...}{...}{...}{...})
+      const handleParseLatex = () => {
+        if (!latexInput.trim()) {
+          alert('Vui lòng dán nội dung LaTeX vào ô!');
+          return;
+        }
+        try {
+          const rawBlocks = latexInput.split(/\\begin\{ex\}/i).filter(b => b.trim().length > 0);
+          const parsedQuestions = [];
+
+          rawBlocks.forEach(block => {
+            let parts = block.split(/\\choice/i);
+            let qText = parts[0].replace(/\\end\{ex\}/g, '').replace(/^(Câu\s*\d+[\.:]?)/i, '').trim();
+
+            let options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
+            if (parts.length > 1) {
+              let choicePart = parts[1];
+              let matches = choicePart.match(/\{([^}]*)\}/g);
+              if (matches && matches.length >= 4) {
+                for (let i = 0; i < 4; i++) {
+                  options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
+                }
+              }
+            }
+
+            if (qText) {
+              parsedQuestions.push({
+                questionText: qText,
+                options: options,
+                correctAnswer: 0
+              });
+            }
+          });
+
+          if (parsedQuestions.length > 0) {
+            setExamForm({...examForm, questions: parsedQuestions});
+            alert(`Đã tự động trích xuất thành công ${parsedQuestions.length} câu hỏi từ mã LaTeX!`);
+          } else {
+            alert('Không tìm thấy cấu trúc \begin{ex} hợp lệ. Vui lòng kiểm tra lại!');
+          }
+        } catch (err) {
+          alert('Lỗi phân tích LaTeX: ' + err.message);
+        }
+      };
+
       const handleAddExam = (e) => {
         e.preventDefault();
         db.ref('exams').push(examForm, err => {
@@ -204,6 +248,7 @@
             alert('Tạo đề kiểm tra thành công!');
             setShowModalExam(false);
             setExamForm({ title: '', duration: 15, questions: [{ questionText: '', options: ['', '', '', ''], correctAnswer: 0 }] });
+            setLatexInput('');
           }
         });
       };
@@ -265,7 +310,6 @@
         );
       }
 
-      // Danh sách các chương gợi ý cho Toán 9 (hoặc thay đổi linh hoạt)
       const chaptersList = [
         'Tất cả',
         'Chương I: Phương trình và hệ phương trình',
@@ -320,7 +364,6 @@
           <main className="max-w-6xl w-full mx-auto p-4 md:p-6 flex-1">
             {view === 'home' && (
               <div>
-                {/* Thanh chọn Môn học (Thư mục cấp 1) */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                   <div className="flex items-center space-x-2 overflow-x-auto w-full pb-2">
                     {['Tất cả', 'Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'].map(folder => (
@@ -337,7 +380,6 @@
                   )}
                 </div>
 
-                {/* Thanh chọn Chương học (Thư mục cấp 2) */}
                 <div className="bg-white p-3 rounded-xl border shadow-sm mb-6 flex items-center space-x-2 overflow-x-auto">
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap"><i className="fa-solid fa-list-ul mr-1"></i> Chọn Chương:</span>
                   {chaptersList.map(chap => (
@@ -409,7 +451,7 @@
                   <h2 className="text-2xl font-bold text-gray-800"><i className="fa-solid fa-file-pen text-blue-600 mr-2"></i> Danh Sách Bài Kiểm Tra Online</h2>
                   {currentUser.role === 'admin' && (
                     <button onClick={() => setShowModalExam(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-green-700">
-                      <i className="fa-solid fa-plus mr-1"></i> Tạo Đề Kiểm Tra
+                      <i className="fa-solid fa-plus mr-1"></i> Tạo Đề Kiểm Tra Từ LaTeX
                     </button>
                   )}
                 </div>
@@ -544,14 +586,12 @@
             )}
           </main>
 
-          {/* Modal Đăng Bài Giảng theo Thư mục & Chương */}
           {showModalLecture && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold mb-4">Đăng Bài Giảng (Chọn Thư mục & Chương)</h3>
+                <h3 className="text-lg font-bold mb-4">Đăng Bài Giảng Mới</h3>
                 <form onSubmit={handleAddLecture} className="space-y-3">
-                  <div><label className="text-xs font-semibold">Tên bài học (VD: Bài 1: Phương trình quy về PT bậc nhất)</label><input required type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.title} onChange={e=>setLectureForm({...lectureForm, title: e.target.value})} /></div>
-                  
+                  <div><label className="text-xs font-semibold">Tên bài học</label><input required type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.title} onChange={e=>setLectureForm({...lectureForm, title: e.target.value})} /></div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-xs font-semibold">Thư mục môn</label>
@@ -566,17 +606,14 @@
                       </select>
                     </div>
                   </div>
-
                   <div><label className="text-xs font-semibold">Giảng viên</label><input type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.instructor} onChange={e=>setLectureForm({...lectureForm, instructor: e.target.value})} /></div>
                   <div><label className="text-xs font-semibold">Link Video MP4 (URL)</label><input type="url" className="w-full p-2 border rounded text-sm" value={lectureForm.videoUrl} onChange={e=>setLectureForm({...lectureForm, videoUrl: e.target.value})} /></div>
-                  
                   <div className="bg-blue-50 p-3 rounded border space-y-2">
                     <label className="text-xs font-bold text-blue-800">Tài liệu đính kèm (Word / PDF URL):</label>
-                    <input type="text" placeholder="Tên file hiển thị (VD: Bai1_Toan9.pdf)" className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileName} onChange={e=>setLectureForm({...lectureForm, fileName: e.target.value})} />
+                    <input type="text" placeholder="Tên file hiển thị (VD: De_thi.pdf)" className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileName} onChange={e=>setLectureForm({...lectureForm, fileName: e.target.value})} />
                     <input type="text" placeholder="Link tải file..." className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileUrl} onChange={e=>setLectureForm({...lectureForm, fileUrl: e.target.value})} />
                   </div>
-
-                  <div><label className="text-xs font-semibold">Mô tả bài học</label><textarea rows="2" className="w-full p-2 border rounded text-sm" value={lectureForm.description} onChange={e=>setLectureForm({...lectureForm, description: e.target.value})}></textarea></div>
+                  <div><label className="text-xs font-semibold">Mô tả</label><textarea rows="2" className="w-full p-2 border rounded text-sm" value={lectureForm.description} onChange={e=>setLectureForm({...lectureForm, description: e.target.value})}></textarea></div>
                   <div className="flex justify-end space-x-2 pt-2">
                     <button type="button" onClick={()=>setShowModalLecture(false)} className="px-3 py-1.5 border rounded text-sm">Hủy</button>
                     <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded text-sm font-medium">Đăng Bài</button>
@@ -586,15 +623,20 @@
             </div>
           )}
 
-          {/* Modal Tạo Đề Kiểm Tra */}
           {showModalExam && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold mb-4">Tạo Đề Kiểm Tra Online</h3>
+                <h3 className="text-lg font-bold mb-4">Tạo Đề Kiểm Tra & Nhập Từ LaTeX</h3>
                 <form onSubmit={handleAddExam} className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><label className="text-xs font-semibold">Tiêu đề bài kiểm tra</label><input required type="text" className="w-full p-2 border rounded text-sm" value={examForm.title} onChange={e=>setExamForm({...examForm, title: e.target.value})} /></div>
                     <div><label className="text-xs font-semibold">Thời gian (phút)</label><input required type="number" className="w-full p-2 border rounded text-sm" value={examForm.duration} onChange={e=>setExamForm({...examForm, duration: Number(e.target.value)})} /></div>
+                  </div>
+
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 space-y-2">
+                    <label className="block text-xs font-bold text-yellow-800"><i className="fa-solid fa-code mr-1"></i> Dán mã LaTeX (\begin{ex} ... \choice {...}{...}{...}{...}):</label>
+                    <textarea rows="4" placeholder="\begin{ex}&#10;Nội dung câu hỏi...&#10;\choice{$A$}{$B$}{$C$}{$D$}&#10;\end{ex}" className="w-full p-2 border rounded text-xs bg-white font-mono" value={latexInput} onChange={e => setLatexInput(e.target.value)}></textarea>
+                    <button type="button" onClick={handleParseLatex} className="bg-yellow-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-yellow-700">Tự động bóc tách câu hỏi & đáp án</button>
                   </div>
 
                   <div className="border-t pt-3">
