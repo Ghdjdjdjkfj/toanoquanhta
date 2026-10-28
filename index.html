@@ -3,20 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tài Liệu Ôn Tập THCS & THPT - Toán 9</title>
+  <title>Tài Liệu Ôn Tập THCS & THPT</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
   <div id="root"></div>
-
   <script type="text/babel">
     const firebaseConfig = {
       apiKey: "AIzaSyD73a7Wr2d2_u4FeSfigcZ2pfrL6ai-3iQ",
@@ -28,623 +25,93 @@
       appId: "1:688386595335:web:c77441d012b1dba56be8a2",
       measurementId: "G-NH4MZXP235"
     };
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     const { useState, useEffect } = React;
 
     function App() {
-      const [currentUser, setCurrentUser] = useState(() => {
-        const saved = localStorage.getItem('current_user_v8');
-        return saved ? JSON.parse(saved) : null;
-      });
-
-      const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-      const [authError, setAuthError] = useState('');
-
+      const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user_v9') || 'null'));
+      const [view, setView] = useState('home');
       const [lectures, setLectures] = useState([]);
       const [exams, setExams] = useState([]);
-      const [students, setStudents] = useState([]);
-      const [submissions, setSubmissions] = useState([]);
-      
-      const [loading, setLoading] = useState(true);
-      const [view, setView] = useState('home');
-      const [selectedLecture, setSelectedLecture] = useState(null);
-      const [selectedExam, setSelectedExam] = useState(null);
-      const [selectedSubjectFolder, setSelectedSubjectFolder] = useState('Tất cả');
-
-      const [showModalLecture, setShowModalLecture] = useState(false);
-      const [showModalExam, setShowModalExam] = useState(false);
-
-      const [lectureForm, setLectureForm] = useState({
-        title: '', subject: 'Toán 9', instructor: 'Hai Ton', videoUrl: '', fileName: 'Tai_lieu.pdf', fileSize: '3.5 MB', fileUrl: '', description: ''
-      });
-
-      const [studentForm, setStudentForm] = useState({ username: '', password: '' });
-
-      const [examForm, setExamForm] = useState({
-        title: '',
-        duration: 15,
-        questions: [{ questionText: '', options: ['', '', '', ''], correctAnswer: 0 }]
-      });
-      const [latexInput, setLatexInput] = useState('');
-
-      const [userAnswers, setUserAnswers] = useState({});
-      const [timeLeft, setTimeLeft] = useState(0);
-      const [examResult, setExamResult] = useState(null);
+      const [loginForm, setLoginForm] = useState({ username: '', password: '' });
 
       useEffect(() => {
-        const lecturesRef = db.ref('lectures');
-        const examsRef = db.ref('exams');
-        const studentsRef = db.ref('students');
-        const submissionsRef = db.ref('submissions');
-
-        lecturesRef.on('value', snapshot => {
-          const data = snapshot.val();
-          setLectures(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })).reverse() : []);
-          setLoading(false);
+        db.ref('lectures').on('value', snap => {
+          const d = snap.val();
+          setLectures(d ? Object.keys(d).map(k => ({ id: k, ...d[k] })).reverse() : []);
         });
-
-        examsRef.on('value', snapshot => {
-          const data = snapshot.val();
-          setExams(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })).reverse() : []);
+        db.ref('exams').on('value', snap => {
+          const d = snap.val();
+          setExams(d ? Object.keys(d).map(k => ({ id: k, ...d[k] })).reverse() : []);
         });
-
-        studentsRef.on('value', snapshot => {
-          const data = snapshot.val();
-          setStudents(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : []);
-        });
-
-        submissionsRef.on('value', snapshot => {
-          const data = snapshot.val();
-          setSubmissions(data ? Object.keys(data).map(k => ({ id: k, ...data[k] })).reverse() : []);
-        });
-
-        return () => {
-          lecturesRef.off();
-          examsRef.off();
-          studentsRef.off();
-          submissionsRef.off();
-        };
       }, []);
 
       useEffect(() => {
-        if (currentUser) localStorage.setItem('current_user_v8', JSON.stringify(currentUser));
-        else localStorage.removeItem('current_user_v8');
-      }, [currentUser]);
-
-      useEffect(() => {
-        if (view === 'do_exam' && timeLeft > 0) {
-          const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
-          return () => clearInterval(timer);
-        } else if (view === 'do_exam' && timeLeft === 0 && examResult === null) {
-          handleSubmitExam();
-        }
-      }, [view, timeLeft, examResult]);
+        localStorage.setItem('user_v9', JSON.stringify(user));
+      }, [user]);
 
       const handleLogin = (e) => {
         e.preventDefault();
-        setAuthError('');
         if (loginForm.username === 'admin' && loginForm.password === 'admin123') {
-          setCurrentUser({ username: 'Quản trị viên (Admin)', role: 'admin' });
-          return;
-        }
-
-        const found = students.find(s => s.username === loginForm.username && s.password === loginForm.password);
-        if (found) {
-          setCurrentUser({ username: found.username, role: 'student' });
+          setUser({ username: 'Admin', role: 'admin' });
         } else {
-          setAuthError('Tên đăng nhập hoặc mật khẩu không chính xác!');
+          alert('Sai tài khoản hoặc mật khẩu!');
         }
       };
 
-      const handleAddStudent = (e) => {
-        e.preventDefault();
-        if (students.some(s => s.username === studentForm.username) || studentForm.username === 'admin') {
-          alert('Tài khoản này đã tồn tại!');
-          return;
-        }
-        db.ref('students').push(studentForm, err => {
-          if (!err) {
-            alert('Đã cấp tài khoản học sinh thành công!');
-            setStudentForm({ username: '', password: '' });
-          }
-        });
-      };
-
-      const handleDeleteStudent = (id) => {
-        if (confirm('Bạn có chắc muốn xóa học sinh này?')) {
-          db.ref('students/' + id).remove();
-        }
-      };
-
-      const handleAddLecture = (e) => {
-        e.preventDefault();
-        const newLec = {
-          ...lectureForm,
-          date: new Date().toISOString().split('T')[0],
-          videoUrl: lectureForm.videoUrl || "https://www.w3schools.com/html/mov_bbb.mp4",
-          files: lectureForm.fileUrl ? [{ name: lectureForm.fileName, size: lectureForm.fileSize, url: lectureForm.fileUrl }] : []
-        };
-        db.ref('lectures').push(newLec, err => {
-          if (!err) {
-            alert('Đăng bài giảng vào thư mục thành công!');
-            setShowModalLecture(false);
-            setLectureForm({ title: '', subject: 'Toán 9', instructor: 'Hai Ton', videoUrl: '', fileName: 'Tai_lieu.pdf', fileSize: '3.5 MB', fileUrl: '', description: '' });
-          }
-        });
-      };
-
-      // Thuật toán thông minh phân tích LaTeX chuẩn định dạng \begin{ex} ... \choice ...
-      const handleParseLatex = () => {
-        if (!latexInput.trim()) {
-          alert('Vui lòng nhập nội dung LaTeX!');
-          return;
-        }
-
-        try {
-          // Tách các câu dựa trên môi trường \begin{ex} hoặc chữ "Câu"
-          const rawBlocks = latexInput.split(/\\begin\{ex\}|(?=Câu\s+\d+[\.:])/i).filter(b => b.trim().length > 0);
-          const parsedQuestions = [];
-
-          rawBlocks.forEach(block => {
-            // Tách phần dẫn câu hỏi và phần \choice
-            let parts = block.split(/\\choice/i);
-            let qText = parts[0].replace(/\\end\{ex\}/g, '').replace(/^(Câu\s*\d+[\.:]?)/i, '').trim();
-
-            let options = ['', '', '', ''];
-            if (parts.length > 1) {
-              let choicePart = parts[1];
-              // Lấy các đáp án trong dấu { ... }
-              let matches = choicePart.match(/\{([^}]*)\}/g);
-              if (matches && matches.length >= 4) {
-                for (let i = 0; i < 4; i++) {
-                  options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
-                }
-              } else {
-                // Fallback nếu không đúng cú pháp ngoặc nhọn
-                options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
-              }
-            } else {
-              options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
-            }
-
-            if (qText) {
-              parsedQuestions.push({
-                questionText: qText,
-                options: options,
-                correctAnswer: 0 // Mặc định đáp án đầu tiên là A, admin có thể chỉnh lại
-              });
-            }
-          });
-
-          if (parsedQuestions.length > 0) {
-            setExamForm({...examForm, questions: parsedQuestions});
-            alert(`Đã trích xuất thành công ${parsedQuestions.length} câu hỏi từ mã LaTeX!`);
-          } else {
-            alert('Không tìm thấy cấu trúc câu hỏi hợp lệ. Hãy đảm bảo dùng cú pháp \begin{ex} ... \choice {...}{...}{...}{...}');
-          }
-        } catch (err) {
-          alert('Lỗi phân tích LaTeX: ' + err.message);
-        }
-      };
-
-      const handleAddExam = (e) => {
-        e.preventDefault();
-        db.ref('exams').push(examForm, err => {
-          if (!err) {
-            alert('Tạo đề kiểm tra thành công!');
-            setShowModalExam(false);
-            setExamForm({ title: '', duration: 15, questions: [{ questionText: '', options: ['', '', '', ''], correctAnswer: 0 }] });
-            setLatexInput('');
-          }
-        });
-      };
-
-      const startExam = (exam) => {
-        setSelectedExam(exam);
-        setUserAnswers({});
-        setTimeLeft(exam.duration * 60);
-        setExamResult(null);
-        setView('do_exam');
-      };
-
-      const handleSubmitExam = () => {
-        let score = 0;
-        selectedExam.questions.forEach((q, idx) => {
-          if (userAnswers[idx] === q.correctAnswer) score++;
-        });
-        const finalScore = Number(((score / selectedExam.questions.length) * 10).toFixed(1));
-        
-        const resultData = {
-          examTitle: selectedExam.title,
-          studentName: currentUser.username,
-          score: finalScore,
-          correctCount: score,
-          totalQuestions: selectedExam.questions.length,
-          date: new Date().toLocaleString()
-        };
-
-        db.ref('submissions').push(resultData);
-        setExamResult({ score, total: selectedExam.questions.length, finalScore });
-      };
-
-      if (!currentUser) {
+      if (!user) {
         return (
-          <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-              <div className="text-center mb-6">
-                <i className="fa-solid fa-graduation-cap text-blue-600 text-4xl mb-2"></i>
-                <h1 className="text-2xl font-bold text-gray-800">Tài Liệu Ôn Tập THCS & THPT</h1>
-                <p className="text-sm text-gray-500 mt-1">Facebook: Hai Ton</p>
-              </div>
-
-              {authError && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs mb-4 border border-red-200">{authError}</div>}
-
+          <div className="min-h-screen bg-blue-600 flex items-center justify-center p-4">
+            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
+              <h1 className="text-2xl font-bold text-center mb-2">Tài Liệu Ôn Tập THCS & THPT</h1>
+              <p className="text-center text-gray-500 text-sm mb-6">Facebook: Hai Ton</p>
               <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Tên đăng nhập</label>
-                  <input type="text" required className="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Mật khẩu</label>
-                  <input type="password" required className="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} />
-                </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow mt-2">Đăng Nhập</button>
+                <input type="text" placeholder="Tên đăng nhập" required className="w-full p-3 border rounded-lg" value={loginForm.username} onChange={e=>setLoginForm({...loginForm, username: e.target.value})} />
+                <input type="password" placeholder="Mật khẩu" required className="w-full p-3 border rounded-lg" value={loginForm.password} onChange={e=>setLoginForm({...loginForm, password: e.target.value})} />
+                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold">Đăng Nhập</button>
               </form>
             </div>
           </div>
         );
       }
 
-      const filteredLectures = selectedSubjectFolder === 'Tất cả' 
-        ? lectures 
-        : lectures.filter(l => l.subject === selectedSubjectFolder);
-
       return (
-        <div className="min-h-screen flex flex-col bg-gray-50">
-          <header className="bg-blue-600 text-white shadow-md py-3 px-6 flex justify-between items-center sticky top-0 z-40">
-            <div onClick={() => setView('home')} className="flex items-center space-x-3 cursor-pointer">
-              <i className="fa-solid fa-graduation-cap text-2xl"></i>
-              <span className="text-xl font-bold">Tài Liệu Ôn Tập THCS & THPT</span>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <button onClick={() => setView('home')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'home' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
-                <i className="fa-solid fa-house mr-1"></i> Thư mục bài giảng
-              </button>
-              
-              <button onClick={() => setView('exam_list')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'exam_list' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
-                <i className="fa-solid fa-file-pen mr-1"></i> Kiểm tra online
-              </button>
-
-              {currentUser.role === 'admin' && (
-                <>
-                  <button onClick={() => setView('statistics')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'statistics' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
-                    <i className="fa-solid fa-chart-bar mr-1"></i> Thống kê điểm
-                  </button>
-                  <button onClick={() => setView('admin_panel')} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${view === 'admin_panel' ? 'bg-blue-800' : 'hover:bg-blue-500'}`}>
-                    <i className="fa-solid fa-users-gear mr-1"></i> Quản lý học sinh
-                  </button>
-                </>
-              )}
-
-              <div className="flex items-center space-x-2 bg-blue-700 px-3 py-1.5 rounded-lg text-sm">
-                <i className="fa-solid fa-user"></i>
-                <span>{currentUser.username}</span>
-                <button onClick={() => setCurrentUser(null)} className="ml-2 text-red-200 hover:text-white"><i className="fa-solid fa-right-from-bracket"></i></button>
-              </div>
+        <div className="min-h-screen flex flex-col">
+          <header className="bg-blue-600 text-white p-4 flex justify-between items-center shadow">
+            <h1 className="font-bold text-lg">Tài Liệu Ôn Tập THCS & THPT</h1>
+            <div className="space-x-4 flex items-center">
+              <button onClick={()=>setView('home')} className="hover:underline">Trang chủ</button>
+              <button onClick={()=>setView('exams')} className="hover:underline">Kiểm tra</button>
+              <span className="bg-blue-700 px-3 py-1 rounded">Xin chào: {user.username}</span>
+              <button onClick={()=>setUser(null)} className="text-red-200"><i className="fa-solid fa-right-from-bracket"></i></button>
             </div>
           </header>
-
-          <main className="max-w-6xl w-full mx-auto p-4 md:p-6 flex-1">
-            {view === 'home' && (
+          <main className="max-w-4xl w-full mx-auto p-6 flex-1">
+            {view === 'home' ? (
               <div>
-                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                  <div className="flex items-center space-x-2 overflow-x-auto w-full pb-2">
-                    {['Tất cả', 'Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10', 'Luyện thi THPTQG'].map(folder => (
-                      <button key={folder} onClick={() => setSelectedSubjectFolder(folder)} className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition ${selectedSubjectFolder === folder ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-700 border hover:bg-gray-100'}`}>
-                        <i className="fa-solid fa-folder-open mr-1.5 text-yellow-500"></i> {folder}
-                      </button>
-                    ))}
-                  </div>
-
-                  {currentUser.role === 'admin' && (
-                    <button onClick={() => setShowModalLecture(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-green-700 whitespace-nowrap">
-                      <i className="fa-solid fa-plus mr-1"></i> Đăng Bài Giảng Mới
-                    </button>
-                  )}
-                </div>
-
-                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                  <i className="fa-solid fa-book-open text-blue-600 mr-2"></i> Thư mục: <span className="text-blue-600 ml-1">{selectedSubjectFolder}</span>
-                </h2>
-
-                {loading ? (
-                  <div className="text-center py-12 text-gray-500"><i className="fa-solid fa-spinner fa-spin text-3xl"></i></div>
-                ) : filteredLectures.length === 0 ? (
-                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500">Chưa có bài giảng nào trong thư mục này.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredLectures.map(item => (
-                      <div key={item.id} className="bg-white rounded-xl shadow border hover:shadow-lg transition flex flex-col justify-between p-5">
-                        <div>
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-semibold">{item.subject}</span>
-                          <h3 className="font-bold text-lg text-gray-900 mt-2">{item.title}</h3>
-                          <p className="text-xs text-gray-500 mt-1"><i className="fa-regular fa-calendar"></i> {item.date} | GV: {item.instructor}</p>
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.description}</p>
-                        </div>
-                        <div className="mt-5 border-t pt-3 flex items-center justify-between">
-                          <button onClick={() => { setSelectedLecture(item); setView('detail'); }} className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">
-                            <i className="fa-solid fa-circle-play mr-1"></i> Học ngay
-                          </button>
-                          <span className="text-xs text-gray-500"><i className="fa-solid fa-paperclip mr-1"></i> {item.files ? item.files.length : 0} tài liệu</span>
-                        </div>
+                <h2 className="text-xl font-bold mb-4">Danh sách bài giảng ({lectures.length})</h2>
+                {lectures.length === 0 ? <p className="text-gray-500">Chưa có bài giảng nào trên hệ thống.</p> : (
+                  <div className="space-y-3">
+                    {lectures.map(l => (
+                      <div key={l.id} className="bg-white p-4 rounded-lg shadow border">
+                        <h3 className="font-bold text-lg">{l.title}</h3>
+                        <p className="text-sm text-gray-600">{l.description}</p>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            )}
-
-            {view === 'detail' && selectedLecture && (
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <button onClick={() => setView('home')} className="mb-4 text-blue-600 hover:underline flex items-center text-sm font-medium">
-                  <i className="fa-solid fa-arrow-left mr-1"></i> Quay lại thư mục
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedLecture.title}</h1>
-                <div className="bg-black aspect-video rounded-lg overflow-hidden mb-6">
-                  <video controls className="w-full h-full"><source src={selectedLecture.videoUrl} type="video/mp4" /></video>
-                </div>
-                <p className="text-gray-700 mb-6">{selectedLecture.description}</p>
-                <h3 className="font-bold text-gray-800 mb-3">Tài liệu đính kèm (Word / PDF / LaTeX):</h3>
-                {selectedLecture.files?.map((f, i) => (
-                  <div key={i} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border mb-2">
-                    <span className="font-medium text-sm"><i className="fa-solid fa-file-pdf text-red-500 mr-2"></i> {f.name} ({f.size})</span>
-                    <a href={f.url} target="_blank" className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm">Tải xuống</a>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {view === 'exam_list' && (
+            ) : (
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800"><i className="fa-solid fa-file-pen text-blue-600 mr-2"></i> Danh Sách Bài Kiểm Tra Online</h2>
-                  {currentUser.role === 'admin' && (
-                    <button onClick={() => setShowModalExam(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-green-700">
-                      <i className="fa-solid fa-plus mr-1"></i> Tạo Đề Từ LaTeX / File
-                    </button>
-                  )}
-                </div>
-                {exams.length === 0 ? (
-                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500">Chưa có bài kiểm tra nào. Admin hãy tạo đề thi mới nhé!</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {exams.map(exam => (
-                      <div key={exam.id} className="bg-white p-5 rounded-xl shadow border flex justify-between items-center">
-                        <div>
-                          <h3 className="font-bold text-lg text-gray-900">{exam.title}</h3>
-                          <p className="text-xs text-gray-500 mt-1"><i className="fa-solid fa-clock"></i> Thời gian: {exam.duration} phút | {exam.questions.length} câu hỏi</p>
-                        </div>
-                        <button onClick={() => startExam(exam)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">Làm bài</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {view === 'do_exam' && selectedExam && (
-              <div className="bg-white rounded-xl shadow-md p-6 max-w-3xl mx-auto">
-                <div className="flex justify-between items-center border-b pb-4 mb-6 sticky top-16 bg-white z-30">
-                  <h2 className="text-xl font-bold">{selectedExam.title}</h2>
-                  <div className="bg-red-100 text-red-700 font-bold px-4 py-2 rounded-lg">
-                    <i className="fa-solid fa-clock mr-1"></i> {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                  </div>
-                </div>
-
-                {examResult ? (
-                  <div className="text-center py-8">
-                    <div className="text-5xl font-bold text-blue-600 mb-2">{examResult.finalScore} điểm</div>
-                    <p className="text-gray-600 mb-6">Bạn đã trả lời đúng {examResult.score} / {examResult.total} câu hỏi. Điểm số đã được ghi nhận vào hệ thống!</p>
-                    <button onClick={() => setView('exam_list')} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold">Quay lại danh sách đề thi</button>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {selectedExam.questions.map((q, qIdx) => (
-                      <div key={qIdx} className="bg-gray-50 p-4 rounded-xl border">
-                        <p className="font-semibold text-gray-800 mb-3">Câu {qIdx + 1}: {q.questionText}</p>
-                        <div className="space-y-2">
-                          {q.options.map((opt, optIdx) => (
-                            <label key={optIdx} className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${userAnswers[qIdx] === optIdx ? 'bg-blue-100 border-blue-500' : 'bg-white hover:bg-gray-100'}`}>
-                              <input type="radio" name={`q_${qIdx}`} checked={userAnswers[qIdx] === optIdx} onChange={() => setUserAnswers({...userAnswers, [qIdx]: optIdx})} />
-                              <span className="text-sm"><b>{['A', 'B', 'C', 'D'][optIdx]}.</b> {opt}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    <button onClick={handleSubmitExam} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow hover:bg-green-700">Nộp Bài Thi & Chấm Điểm</button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {view === 'statistics' && currentUser.role === 'admin' && (
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6"><i className="fa-solid fa-chart-bar text-blue-600 mr-2"></i> Thống Kê Điểm Số & Kết Quả Học Sinh</h2>
-                
-                {submissions.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">Chưa có dữ liệu bài nộp nào từ học sinh.</p>
-                ) : (
-                  <div className="border rounded-xl overflow-hidden">
-                    <table className="w-full text-left border-collapse">
-                      <thead className="bg-gray-100 border-b text-xs text-gray-700">
-                        <tr>
-                          <th className="p-3">Học sinh</th>
-                          <th className="p-3">Bài kiểm tra</th>
-                          <th className="p-3">Điểm số</th>
-                          <th className="p-3">Số câu đúng</th>
-                          <th className="p-3 text-right">Thời gian nộp</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y text-sm">
-                        {submissions.map(sub => (
-                          <tr key={sub.id} className="hover:bg-gray-50">
-                            <td className="p-3 font-semibold">{sub.studentName}</td>
-                            <td className="p-3">{sub.examTitle}</td>
-                            <td className="p-3 font-bold text-blue-600">{sub.score} điểm</td>
-                            <td className="p-3">{sub.correctCount} / {sub.totalQuestions}</td>
-                            <td className="p-3 text-right text-gray-500 text-xs">{sub.date}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {view === 'admin_panel' && currentUser.role === 'admin' && (
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6"><i className="fa-solid fa-users-gear text-blue-600 mr-2"></i> Quản Lý Tài Khoản Học Sinh</h2>
-                
-                <form onSubmit={handleAddStudent} className="bg-blue-50 p-4 rounded-xl border border-blue-200 mb-6 flex gap-3 items-end">
-                  <div className="flex-1">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Tên đăng nhập học sinh</label>
-                    <input type="text" required placeholder="hs_nguyenvanA" className="w-full p-2 border rounded text-sm bg-white" value={studentForm.username} onChange={e => setStudentForm({...studentForm, username: e.target.value})} />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Mật khẩu cấp</label>
-                    <input type="text" required placeholder="123456" className="w-full p-2 border rounded text-sm bg-white" value={studentForm.password} onChange={e => setStudentForm({...studentForm, password: e.target.value})} />
-                  </div>
-                  <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Cấp Tài Khoản</button>
-                </form>
-
-                <div className="border rounded-xl overflow-hidden">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-100 border-b text-xs text-gray-700">
-                      <tr>
-                        <th className="p-3">Tên đăng nhập</th>
-                        <th className="p-3">Mật khẩu</th>
-                        <th className="p-3 text-right">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y text-sm">
-                      {students.map(s => (
-                        <tr key={s.id} className="hover:bg-gray-50">
-                          <td className="p-3 font-semibold">{s.username}</td>
-                          <td className="p-3 font-mono text-gray-600">{s.password}</td>
-                          <td className="p-3 text-right">
-                            <button onClick={() => handleDeleteStudent(s.id)} className="text-red-600 hover:text-red-800 text-xs font-medium"><i className="fa-solid fa-trash"></i> Xóa</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <h2 className="text-xl font-bold mb-4">Danh sách bài kiểm tra ({exams.length})</h2>
+                {exams.length === 0 ? <p className="text-gray-500">Chưa có bài kiểm tra nào.</p> : null}
               </div>
             )}
           </main>
-
-          {showModalLecture && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold mb-4">Đăng Bài Giảng Mới Vào Thư Mục</h3>
-                <form onSubmit={handleAddLecture} className="space-y-3">
-                  <div><label className="text-xs font-semibold">Tiêu đề bài học</label><input required type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.title} onChange={e=>setLectureForm({...lectureForm, title: e.target.value})} /></div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs font-semibold">Chọn thư mục môn</label>
-                      <select className="w-full p-2 border rounded text-sm bg-white" value={lectureForm.subject} onChange={e=>setLectureForm({...lectureForm, subject: e.target.value})}>
-                        {['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10', 'Luyện thi THPTQG'].map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                      </select>
-                    </div>
-                    <div><label className="text-xs font-semibold">Giảng viên</label><input type="text" className="w-full p-2 border rounded text-sm" value={lectureForm.instructor} onChange={e=>setLectureForm({...lectureForm, instructor: e.target.value})} /></div>
-                  </div>
-                  <div><label className="text-xs font-semibold">Link Video MP4 (URL)</label><input type="url" className="w-full p-2 border rounded text-sm" value={lectureForm.videoUrl} onChange={e=>setLectureForm({...lectureForm, videoUrl: e.target.value})} /></div>
-                  <div className="bg-blue-50 p-3 rounded border space-y-2">
-                    <label className="text-xs font-bold text-blue-800">Tài liệu đính kèm (Word / PDF URL):</label>
-                    <input type="text" placeholder="Tên file hiển thị (VD: De_thi_Toan9.pdf)" className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileName} onChange={e=>setLectureForm({...lectureForm, fileName: e.target.value})} />
-                    <input type="text" placeholder="Link tải file..." className="w-full p-1.5 border rounded text-xs bg-white" value={lectureForm.fileUrl} onChange={e=>setLectureForm({...lectureForm, fileUrl: e.target.value})} />
-                  </div>
-                  <div><label className="text-xs font-semibold">Mô tả bài học</label><textarea rows="2" className="w-full p-2 border rounded text-sm" value={lectureForm.description} onChange={e=>setLectureForm({...lectureForm, description: e.target.value})}></textarea></div>
-                  <div className="flex justify-end space-x-2 pt-2">
-                    <button type="button" onClick={()=>setShowModalLecture(false)} className="px-3 py-1.5 border rounded text-sm">Hủy</button>
-                    <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded text-sm font-medium">Đăng Bài</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {showModalExam && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold mb-4">Tạo Đề Kiểm Tra & Trích Xuất LaTeX Chuẩn</h3>
-                <form onSubmit={handleAddExam} className="space-y-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2"><label className="text-xs font-semibold">Tiêu đề bài kiểm tra</label><input required type="text" className="w-full p-2 border rounded text-sm" value={examForm.title} onChange={e=>setExamForm({...examForm, title: e.target.value})} /></div>
-                    <div><label className="text-xs font-semibold">Thời gian (phút)</label><input required type="number" className="w-full p-2 border rounded text-sm" value={examForm.duration} onChange={e=>setExamForm({...examForm, duration: Number(e.target.value)})} /></div>
-                  </div>
-
-                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 space-y-2">
-                    <label className="block text-xs font-bold text-yellow-800"><i className="fa-solid fa-code mr-1"></i> Dán mã LaTeX (\begin{ex} ... \choice {...}{...}{...}{...}):</label>
-                    <textarea rows="4" placeholder="\begin{ex}&#10;Nội dung câu hỏi ở đây...&#10;\choice{$x=2$}{$x=3$}{$x=-2$}{$x=-3$}&#10;\end{ex}" className="w-full p-2 border rounded text-xs bg-white font-mono" value={latexInput} onChange={e => setLatexInput(e.target.value)}></textarea>
-                    <button type="button" onClick={handleParseLatex} className="bg-yellow-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-yellow-700">Tự động bóc tách câu hỏi & đáp án</button>
-                  </div>
-
-                  <div className="border-t pt-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-bold text-sm">Danh sách câu hỏi trắc nghiệm</h4>
-                      <button type="button" onClick={() => setExamForm({...examForm, questions: [...examForm.questions, { questionText: '', options: ['', '', '', ''], correctAnswer: 0 }]})} className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-semibold">+ Thêm câu hỏi</button>
-                    </div>
-
-                    <div className="space-y-4 max-h-60 overflow-y-auto p-1">
-                      {examForm.questions.map((q, qIdx) => (
-                        <div key={qIdx} className="bg-gray-50 p-3 rounded-lg border space-y-2">
-                          <input type="text" placeholder={`Nội dung câu hỏi ${qIdx + 1}`} className="w-full p-1.5 border rounded text-xs bg-white font-semibold" value={q.questionText} onChange={e => {
-                            const newQs = [...examForm.questions];
-                            newQs[qIdx].questionText = e.target.value;
-                            setExamForm({...examForm, questions: newQs});
-                          }} />
-                          <div className="grid grid-cols-2 gap-2">
-                            {q.options.map((opt, optIdx) => (
-                              <div key={optIdx} className="flex items-center space-x-1">
-                                <input type="radio" name={`correct_${qIdx}`} checked={q.correctAnswer === optIdx} onChange={() => {
-                                  const newQs = [...examForm.questions];
-                                  newQs[qIdx].correctAnswer = optIdx;
-                                  setExamForm({...examForm, questions: newQs});
-                                }} title="Chọn làm đáp án đúng" />
-                                <input type="text" placeholder={`Đáp án ${['A', 'B', 'C', 'D'][optIdx]}`} className="w-full p-1 border rounded text-xs bg-white" value={opt} onChange={e => {
-                                  const newQs = [...examForm.questions];
-                                  newQs[qIdx].options[optIdx] = e.target.value;
-                                  setExamForm({...examForm, questions: newQs});
-                                }} />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-2 pt-2 border-t">
-                    <button type="button" onClick={()=>setShowModalExam(false)} className="px-3 py-1.5 border rounded text-sm">Hủy</button>
-                    <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white rounded text-sm font-medium">Lưu Đề Kiểm Tra</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
       );
     }
-
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
