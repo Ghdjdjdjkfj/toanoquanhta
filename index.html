@@ -15,6 +15,33 @@
 
   <div id="app"></div>
 
+  <!-- CHATBOT TRỢ GIẢNG AI NỔI -->
+  <div id="aiChatWidget" class="fixed bottom-5 right-5 z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-80 md:w-96 border flex flex-col overflow-hidden h-[450px]">
+      <div class="bg-blue-600 text-white p-3 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-robot text-lg"></i>
+          <span class="font-bold text-sm">Trợ Giảng AI - Toán Học</span>
+        </div>
+        <button onclick="toggleAIChat()" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="aiChatMessages" class="flex-1 p-3 overflow-y-auto space-y-3 text-xs bg-gray-50">
+        <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%]">
+          Xin chào! Mình là trợ giảng AI. Bạn có thắc mắc gì về bài tập toán hoặc lý thuyết cần mình giải thích không?
+        </div>
+      </div>
+      <div class="p-2.5 bg-white border-t flex gap-2">
+        <input type="text" id="aiChatInput" placeholder="Nhập câu hỏi của bạn..." class="flex-1 p-2 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter') sendAIMessage()">
+        <button onclick="sendAIMessage()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-blue-700"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NÚT MỞ CHATBOT -->
+  <button onclick="toggleAIChat()" id="aiChatToggleBtn" class="fixed bottom-5 right-5 z-40 bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105">
+    <i class="fa-solid fa-comments text-2xl"></i>
+  </button>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyD73a7Wr2d2_u4FeSfigcZ2pfrL6ai-3iQ",
@@ -549,6 +576,59 @@
       } catch (e) {
         alert('Lỗi phân tích: ' + e.message);
       }
+    }
+
+    // Các hàm điều khiển Chatbot AI
+    function toggleAIChat() {
+      const widget = document.getElementById('aiChatWidget');
+      const toggleBtn = document.getElementById('aiChatToggleBtn');
+      if (widget.classList.contains('hidden')) {
+        widget.classList.remove('hidden');
+        toggleBtn.classList.add('hidden');
+      } else {
+        widget.classList.add('hidden');
+        toggleBtn.classList.remove('hidden');
+      }
+    }
+
+    function sendAIMessage() {
+      const input = document.getElementById('aiChatInput');
+      const msgContainer = document.getElementById('aiChatMessages');
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Hiển thị tin nhắn của học sinh
+      msgContainer.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-blue-600 text-white p-2.5 rounded-xl max-w-[85%]">
+            ${text}
+          </div>
+        </div>
+      `;
+      input.value = '';
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+
+      // Phản hồi giả lập thông minh từ Trợ giảng AI (hoặc tích hợp API thực tế)
+      setTimeout(() => {
+        let reply = "Cảm ơn câu hỏi của bạn! Thầy/cô giáo hoặc trợ giảng AI sẽ cập nhật chi tiết hướng dẫn giải cho bài toán này sớm nhất nhé.";
+        const lower = text.toLowerCase();
+        if (lower.includes('chào') || lower.includes('hello')) {
+          reply = "Chào bạn! Mình có thể giúp gì cho việc học Toán của bạn hôm nay?";
+        } else if (lower.includes('phương trình') || lower.includes('giải')) {
+          reply = "Để giải phương trình bậc nhất hoặc bậc hai, bạn hãy áp dụng các công thức delta hoặc quy tắc chuyển vế đổi dấu nhé. Bạn có thể gửi cụ thể đề bài để mình gợi ý các bước giải!";
+        } else if (lower.includes('pytago') || lower.includes('tam giác')) {
+          reply = "Định lý Pytago phát biểu rằng: Trong một tam giác vuông, bình phương cạnh huyền bằng tổng bình phương hai cạnh góc vuông ($a^2 + b^2 = c^2$).";
+        }
+
+        msgContainer.innerHTML += `
+          <div class="flex justify-start">
+            <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%]">
+              ${reply}
+            </div>
+          </div>
+        `;
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+      }, 800);
     }
 
     bootApp();
