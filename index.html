@@ -28,18 +28,6 @@
         files: [
           { name: "De_thi_am_tap_Toan9.pdf", size: "3.5 MB", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
         ]
-      },
-      {
-        id: 2,
-        title: "Bài 2: Phân tích đa thức thành nhân tử",
-        subject: "Toán 8",
-        instructor: "Thầy Giáo Toán",
-        date: "2026-10-25",
-        videoUrl: "https://www.w3schools.com/html/movie.mp4",
-        description: "Các phương pháp đặt nhân tử chung, dùng hằng đẳng thức và nhóm hạng tử.",
-        files: [
-          { name: "Bai_tap_Phan_tich_da_thuc.pdf", size: "2.1 MB", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
-        ]
       }
     ];
 
@@ -58,18 +46,39 @@
         subject: 'Toán 9',
         instructor: '',
         videoUrl: '',
-        fileUrl: '',
-        fileName: '',
-        fileSize: '2.5 MB',
         description: ''
       });
+
+      // Lưu file được chọn từ máy
+      const [attachedFile, setAttachedFile] = useState(null);
 
       useEffect(() => {
         localStorage.setItem('my_lectures', JSON.stringify(lectures));
       }, [lectures]);
 
+      const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          setAttachedFile(file);
+        }
+      };
+
       const handleAdd = (e) => {
         e.preventDefault();
+        
+        let fileList = [];
+        if (attachedFile) {
+          // Tính dung lượng file (MB)
+          const fileSizeMB = (attachedFile.size / (1024 * 1024)).toFixed(1) + " MB";
+          // Tạo URL tạm thời cho file từ máy tính
+          const fileObjectURL = URL.createObjectURL(attachedFile);
+          fileList.push({
+            name: attachedFile.name,
+            size: fileSizeMB,
+            url: fileObjectURL
+          });
+        }
+
         const newItem = {
           id: Date.now(),
           title: formData.title,
@@ -78,19 +87,15 @@
           date: new Date().toISOString().split('T')[0],
           videoUrl: formData.videoUrl || "https://www.w3schools.com/html/mov_bbb.mp4",
           description: formData.description,
-          files: formData.fileName ? [
-            { 
-              name: formData.fileName, 
-              size: formData.fileSize || "2.0 MB", 
-              url: formData.fileUrl || "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" 
-            }
-          ] : []
+          files: fileList
         };
+
         const updated = [newItem, ...lectures];
         setLectures(updated);
         setSelectedLecture(newItem);
         setShowModal(false);
-        setFormData({ title: '', subject: 'Toán 9', instructor: '', videoUrl: '', fileUrl: '', fileName: '', fileSize: '2.5 MB', description: '' });
+        setFormData({ title: '', subject: 'Toán 9', instructor: '', videoUrl: '', description: '' });
+        setAttachedFile(null);
       };
 
       return (
@@ -183,7 +188,7 @@
                   <p class="text-gray-700 text-sm leading-relaxed">{selectedLecture.description}</p>
                 </div>
 
-                {/* Giao diện khung tải file giống hệt ảnh mẫu bạn gửi */}
+                {/* Khung tải file tài liệu đính kèm */}
                 <div class="border-t pt-4">
                   <h3 class="font-bold text-gray-800 mb-3 flex items-center">
                     <i class="fa-solid fa-folder-open text-blue-600 mr-2"></i> Tài liệu đính kèm bài học:
@@ -193,7 +198,6 @@
                       {selectedLecture.files.map((file, idx) => (
                         <div key={idx} class="flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-xl border border-gray-200 transition shadow-sm">
                           <div class="flex items-center space-x-3">
-                            {/* Icon PDF đỏ chuẩn mẫu */}
                             <i class="fa-solid fa-file-pdf text-red-500 text-3xl"></i>
                             <div>
                               <p class="font-semibold text-gray-900 text-sm">{file.name}</p>
@@ -203,7 +207,7 @@
                           <a 
                             href={file.url} 
                             target="_blank" 
-                            download 
+                            download={file.name}
                             class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center space-x-1.5 bg-white px-3.5 py-2 rounded-lg border border-gray-200 shadow-sm"
                           >
                             <i class="fa-solid fa-download"></i>
@@ -244,20 +248,20 @@
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Link Video MP4 (URL)</label>
                     <input type="url" placeholder="https://..." class="w-full p-2 border rounded text-sm" value={formData.videoUrl} onChange={e=>setFormData({...formData, videoUrl: e.target.value})} />
                   </div>
+
+                  {/* Nút chọn file trực tiếp từ máy tính */}
                   <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Tên file tài liệu (VD: De_thi_Toan9.pdf)</label>
-                    <input type="text" placeholder="De_thi_Toan9.pdf" class="w-full p-2 border rounded text-sm" value={formData.fileName} onChange={e=>setFormData({...formData, fileName: e.target.value})} />
-                  </div>
-                  <div class="grid grid-cols-2 gap-2">
-                    <div>
-                      <label class="block text-xs font-semibold text-gray-600 mb-1">Dung lượng (VD: 3.5 MB)</label>
-                      <input type="text" class="w-full p-2 border rounded text-sm" value={formData.fileSize} onChange={e=>setFormData({...formData, fileSize: e.target.value})} />
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Chọn file tài liệu từ máy (PDF, Word...)</label>
+                    <div class="flex items-center space-x-2">
+                      <input 
+                        type="file" 
+                        onChange={handleFileChange}
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border rounded-lg cursor-pointer"
+                      />
                     </div>
-                    <div>
-                      <label class="block text-xs font-semibold text-gray-600 mb-1">Link tải file (Google Drive URL)</label>
-                      <input type="text" placeholder="https://..." class="w-full p-2 border rounded text-sm" value={formData.fileUrl} onChange={e=>setFormData({...formData, fileUrl: e.target.value})} />
-                    </div>
+                    {attachedFile && <p class="text-xs text-green-600 mt-1">Đã chọn: {attachedFile.name}</p>}
                   </div>
+
                   <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Mô tả bài học</label>
                     <textarea rows="2" class="w-full p-2 border rounded text-sm" value={formData.description} onChange={e=>setFormData({...formData, description: e.target.value})}></textarea>
