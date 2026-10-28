@@ -39,7 +39,7 @@
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
         try {
-          const saved = localStorage.getItem('current_user_v13');
+          const saved = localStorage.getItem('auth_user_v14');
           return saved ? JSON.parse(saved) : null;
         } catch (e) {
           return null;
@@ -127,9 +127,9 @@
 
       useEffect(() => {
         if (currentUser) {
-          localStorage.setItem('current_user_v13', JSON.stringify(currentUser));
+          localStorage.setItem('auth_user_v14', JSON.stringify(currentUser));
         } else {
-          localStorage.removeItem('current_user_v13');
+          localStorage.removeItem('auth_user_v14');
         }
       }, [currentUser]);
 
@@ -189,14 +189,12 @@
         };
         db.ref('lectures').push(newLec, err => {
           if (!err) {
-            alert('Đăng bài giảng vào thư mục thành công!');
+            alert('Đăng bài giảng thành công!');
             setShowModalLecture(false);
-            setLectureForm({ title: '', subject: 'Toán 9', chapter: 'Chương I: Phương trình và hệ phương trình', instructor: 'Hai Ton', videoUrl: '', fileName: 'Tai_lieu.pdf', fileSize: '3.5 MB', fileUrl: '', description: '' });
           }
         });
       };
 
-      // Thuật toán bóc tách LaTeX chuẩn (\begin{ex} ... \choice {...}{...}{...}{...})
       const handleParseLatex = () => {
         if (!latexInput.trim()) {
           alert('Vui lòng dán nội dung LaTeX vào ô!');
@@ -234,7 +232,7 @@
             setExamForm({...examForm, questions: parsedQuestions});
             alert(`Đã tự động trích xuất thành công ${parsedQuestions.length} câu hỏi từ mã LaTeX!`);
           } else {
-            alert('Không tìm thấy cấu trúc \begin{ex} hợp lệ. Vui lòng kiểm tra lại!');
+            alert('Không tìm thấy cấu trúc \begin{ex} hợp lệ.');
           }
         } catch (err) {
           alert('Lỗi phân tích LaTeX: ' + err.message);
