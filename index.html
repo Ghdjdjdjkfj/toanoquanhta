@@ -30,7 +30,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Danh sách Chương và Mục chuẩn theo hình ghi tay
     const chaptersListToan9 = [
       'Tất cả',
       'Chương I: Phương trình và hệ phương trình bậc nhất hai ẩn',
@@ -64,7 +63,12 @@
       exams: [],
       students: [],
       submissions: [],
-      parsedQuestions: []
+      parsedQuestions: [],
+      selectedExam: null,
+      userAnswers: {},
+      timeLeft: 0,
+      examResult: null,
+      timerInterval: null
     };
 
     function init() {
@@ -199,11 +203,53 @@
                     <h3 class="font-bold">${e.title}</h3>
                     <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.questions ? e.questions.length : 0} câu hỏi</p>
                   </div>
-                  <button onclick="alert('Bắt đầu làm bài!')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Làm bài</button>
+                  <button onclick="startExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Làm bài</button>
                 </div>
               `).join('')}
             </div>
           `}
+        `;
+      }
+
+      if (state.view === 'do_exam' && state.selectedExam) {
+        const exam = state.selectedExam;
+        const minutes = Math.floor(state.timeLeft / 60);
+        const seconds = state.timeLeft % 60;
+
+        mainContent = `
+          <div class="bg-white p-6 rounded shadow max-w-3xl mx-auto">
+            <div class="flex justify-between items-center border-b pb-4 mb-6 sticky top-14 bg-white z-20">
+              <h2 class="text-xl font-bold">${exam.title}</h2>
+              <div class="bg-red-100 text-red-700 font-bold px-4 py-2 rounded-lg text-sm">
+                <i class="fa-solid fa-clock mr-1"></i> ${minutes}:${seconds.toString().padStart(2, '0')}
+              </div>
+            </div>
+
+            ${state.examResult ? `
+              <div class="text-center py-8">
+                <div class="text-5xl font-bold text-blue-600 mb-2">${state.examResult.finalScore} điểm</div>
+                <p class="text-gray-600 mb-6">Bạn đã trả lời đúng ${state.examResult.score} / ${state.examResult.total} câu hỏi. Điểm số đã được ghi nhận!</p>
+                <button onclick="changeView('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold">Quay lại danh sách đề thi</button>
+              </div>
+            ` : `
+              <div class="space-y-6">
+                ${exam.questions.map((q, qIdx) => `
+                  <div class="bg-gray-50 p-4 rounded-xl border">
+                    <p class="font-semibold text-gray-800 mb-3">Câu ${qIdx + 1}: ${q.questionText}</p>
+                    <div class="space-y-2">
+                      ${q.options.map((opt, optIdx) => `
+                        <label class="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${state.userAnswers[qIdx] === optIdx ? 'bg-blue-100 border-blue-500' : 'bg-white hover:bg-gray-100'}">
+                          <input type="radio" name="q_${qIdx}" ${state.userAnswers[qIdx] === optIdx ? 'checked' : ''} onclick="selectAnswer(${qIdx}, ${optIdx})">
+                          <span class="text-sm"><b>${['A', 'B', 'C', 'D'][optIdx]}.</b> ${opt}</span>
+                        </label>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+                <button onclick="submitExam()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow hover:bg-green-700">Nộp Bài Thi & Chấm Điểm</button>
+              </div>
+            `}
+          </div>
         `;
       }
 
@@ -387,13 +433,73 @@
       }
     }
 
-    function changeView(v) { state.view = v; render(); }
+    function changeView(v) { 
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      state.view = v; 
+      render(); 
+    }
     function setSubject(s) { state.selectedSubject = s; render(); }
     function setChapter(c) { state.selectedChapter = c; render(); }
-    function logout() { state.currentUser = null; render(); }
+    function logout() { if(state.timerInterval) clearInterval(state.timerInterval); state.currentUser = null; render(); }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function deleteStudent(id) { if(confirm('Xóa học sinh này?')) db.ref('students/' + id).remove(); }
+
+    function startExam(examId) {
+      const exam = state.exams.find(e => e.id === examId);
+      if (!exam) return;
+      state.selectedExam = exam;
+      state.userAnswers = {};
+      state.timeLeft = (exam.duration || 15) * 60;
+      state.examResult = null;
+      state.view = 'do_exam';
+      render();
+
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      state.timerInterval = setInterval(() => {
+        if (state.timeLeft > 0 && !state.examResult) {
+          state.timeLeft--;
+          // Cập nhật hiển thị đồng hồ trực tiếp
+          const clockEl = document.querySelector('.bg-red-100');
+          if (clockEl) {
+            const m = Math.floor(state.timeLeft / 60);
+            const s = state.timeLeft % 60;
+            clockEl.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> ${m}:${s.toString().padStart(2, '0')}`;
+          }
+        } else if (state.timeLeft === 0 && !state.examResult) {
+          clearInterval(state.timerInterval);
+          submitExam();
+        }
+      }, 1000);
+    }
+
+    function selectAnswer(qIdx, optIdx) {
+      state.userAnswers[qIdx] = optIdx;
+    }
+
+    function submitExam() {
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      if (!state.selectedExam) return;
+      let score = 0;
+      const questions = state.selectedExam.questions || [];
+      questions.forEach((q, idx) => {
+        if (state.userAnswers[idx] === q.correctAnswer) score++;
+      });
+      const finalScore = Number(((score / questions.length) * 10).toFixed(1));
+      
+      const subData = {
+        examTitle: state.selectedExam.title,
+        studentName: state.currentUser.username,
+        score: finalScore,
+        correctCount: score,
+        totalQuestions: questions.length,
+        date: new Date().toLocaleString()
+      };
+
+      db.ref('submissions').push(subData);
+      state.examResult = { score, total: questions.length, finalScore };
+      render();
+    }
 
     function parseLatexCode() {
       const code = document.getElementById('latexText').value;
