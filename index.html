@@ -235,6 +235,8 @@
       }
 
       const chaptersList = ['Tất cả', 'Chương I', 'Chương II', 'Chương III', 'Chương IV', 'Chương V'];
+      const subjectsList = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
+
       const filteredLectures = lectures.filter(l => {
         const mSub = selectedSubject === 'Tất cả' || l.subject === selectedSubject;
         const mChap = selectedChapter === 'Tất cả' || l.chapter === selectedChapter;
@@ -247,7 +249,7 @@
             <div onClick={() => setView('home')} className="font-bold text-lg cursor-pointer flex items-center gap-2">
               <i className="fa-solid fa-graduation-cap"></i> Tài Liệu Ôn Tập THCS & THPT
             </div>
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-4 text-sm font-medium">
               <button onClick={() => setView('home')} className="hover:underline">Thư mục</button>
               <button onClick={() => setView('exam_list')} className="hover:underline">Kiểm tra</button>
               {currentUser.role === 'admin' && (
@@ -266,7 +268,7 @@
               <div>
                 <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
                   <div className="flex gap-2 overflow-x-auto pb-2">
-                    {['Tất cả', 'Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'].map(sub => (
+                    {['Tất cả', ...subjectsList].map(sub => (
                       <button key={sub} onClick={() => setSelectedSubject(sub)} className={`px-3 py-1.5 rounded text-sm font-medium ${selectedSubject === sub ? 'bg-blue-600 text-white' : 'bg-white border'}`}>{sub}</button>
                     ))}
                   </div>
@@ -417,24 +419,42 @@
 
           {showModalLec && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded p-6 max-w-md w-full space-y-3">
+              <div className="bg-white rounded p-6 max-w-md w-full space-y-3 shadow-xl">
                 <h3 className="font-bold text-lg">Đăng Bài Giảng</h3>
                 <form onSubmit={handleAddLecture} className="space-y-3 text-sm">
-                  <input type="text" placeholder="Tên bài học" required className="w-full p-2 border rounded" value={lecForm.title} onChange={e => setLecForm({...lecForm, title: e.target.value})} />
-                  <div className="grid grid-cols-2 gap-2">
-                    <select className="p-2 border rounded" value={lecForm.subject} onChange={e => setLecForm({...lecForm, subject: e.target.value})}>
-                      {['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'].s.map?.() || ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'].map(x => <option key={x} value={x}>{x}</option>)}
-                    </select>
-                    <select className="p-2 border rounded" value={lecForm.chapter} onChange={e => setLecForm({...lecForm, chapter: e.target.value})}>
-                      {['Chương I', 'Chương II', 'Chương III', 'Chương IV', 'Chương V'].map(x => <option key={x} value={x}>{x}</option>)}
-                    </select>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Tên bài học</label>
+                    <input type="text" placeholder="VD: Bài 1: Phương trình..." required className="w-full p-2 border rounded" value={lecForm.title} onChange={e => setLecForm({...lecForm, title: e.target.value})} />
                   </div>
-                  <input type="url" placeholder="Link Video MP4" className="w-full p-2 border rounded" value={lecForm.videoUrl} onChange={e => setLecForm({...lecForm, videoUrl: e.target.value})} />
-                  <input type="text" placeholder="Link file PDF/Word đính kèm" className="w-full p-2 border rounded" value={lecForm.fileUrl} onChange={e => setLecForm({...lecForm, fileUrl: e.target.value})} />
-                  <textarea placeholder="Mô tả" className="w-full p-2 border rounded" rows="2" value={lecForm.description} onChange={e => setLecForm({...lecForm, description: e.target.value})}></textarea>
-                  <div className="flex justify-end gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Môn học</label>
+                      <select className="w-full p-2 border rounded bg-white" value={lecForm.subject} onChange={e => setLecForm({...lecForm, subject: e.target.value})}>
+                        {subjectsList.map(x => <option key={x} value={x}>{x}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1">Chương</label>
+                      <select className="w-full p-2 border rounded bg-white" value={lecForm.chapter} onChange={e => setLecForm({...lecForm, chapter: e.target.value})}>
+                        {chaptersList.filter(c => c !== 'Tất cả').map(x => <option key={x} value={x}>{x}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Link Video MP4</label>
+                    <input type="url" placeholder="https://..." className="w-full p-2 border rounded" value={lecForm.videoUrl} onChange={e => setLecForm({...lecForm, videoUrl: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Link file PDF/Word</label>
+                    <input type="text" placeholder="https://..." className="w-full p-2 border rounded" value={lecForm.fileUrl} onChange={e => setLecForm({...lecForm, fileUrl: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Mô tả</label>
+                    <textarea placeholder="Mô tả ngắn..." className="w-full p-2 border rounded" rows="2" value={lecForm.description} onChange={e => setLecForm({...lecForm, description: e.target.value})}></textarea>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
                     <button type="button" onClick={() => setShowModalLec(false)} className="px-3 py-1.5 border rounded">Hủy</button>
-                    <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded">Đăng</button>
+                    <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded">Đăng Bài</button>
                   </div>
                 </form>
               </div>
@@ -443,20 +463,26 @@
 
           {showModalExam && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded p-6 max-w-xl w-full space-y-3">
+              <div className="bg-white rounded p-6 max-w-xl w-full space-y-3 shadow-xl">
                 <h3 className="font-bold text-lg">Tạo Đề Từ LaTeX</h3>
                 <form onSubmit={handleAddExam} className="space-y-3 text-sm">
-                  <input type="text" placeholder="Tên bài kiểm tra" required className="w-full p-2 border rounded" value={examForm.title} onChange={e => setExamForm({...examForm, title: e.target.value})} />
-                  <input type="number" placeholder="Thời gian (phút)" required className="w-full p-2 border rounded" value={examForm.duration} onChange={e => setExamForm({...examForm, duration: Number(e.target.value)})} />
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Tiêu đề bài kiểm tra</label>
+                    <input type="text" placeholder="VD: Kiểm tra 15 phút Chương 1" required className="w-full p-2 border rounded" value={examForm.title} onChange={e => setExamForm({...examForm, title: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Thời gian làm bài (phút)</label>
+                    <input type="number" required className="w-full p-2 border rounded" value={examForm.duration} onChange={e => setExamForm({...examForm, duration: Number(e.target.value)})} />
+                  </div>
                   <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
                     <label className="block text-xs font-bold text-yellow-800 mb-1">Dán mã LaTeX (\begin{ex} ... \choice{A}{B}{C}{D}):</label>
-                    <textarea rows="3" className="w-full p-2 border rounded text-xs font-mono" value={latexInput} onChange={e => setLatexInput(e.target.value)}></textarea>
-                    <button type="button" onClick={handleParseLatex} className="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs">Bóc tách câu hỏi</button>
+                    <textarea rows="4" className="w-full p-2 border rounded text-xs font-mono bg-white" value={latexInput} onChange={e => setLatexInput(e.target.value)} placeholder="\begin{ex}&#10;Câu hỏi...&#10;\choice{$A$}{$B$}{$C$}{$D$}&#10;\end{ex}"></textarea>
+                    <button type="button" onClick={handleParseLatex} className="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold">Bóc tách câu hỏi</button>
                   </div>
-                  <p className="text-xs text-gray-500">Đã nhận diện: <b>{examForm.questions.length}</b> câu hỏi.</p>
-                  <div className="flex justify-end gap-2">
+                  <p className="text-xs text-gray-500 font-semibold">Đã nhận diện: <b>{examForm.questions.length}</b> câu hỏi sẵn sàng.</p>
+                  <div className="flex justify-end gap-2 pt-2 border-t">
                     <button type="button" onClick={() => setShowModalExam(false)} className="px-3 py-1.5 border rounded">Hủy</button>
-                    <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded">Lưu Đề</button>
+                    <button type="submit" className="bg-blue-600 text-white px-4 py-1.5 rounded">Lưu Đề Thi</button>
                   </div>
                 </form>
               </div>
