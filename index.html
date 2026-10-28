@@ -38,7 +38,7 @@
 
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
-        const saved = localStorage.getItem('current_user_v7');
+        const saved = localStorage.getItem('current_user_v8');
         return saved ? JSON.parse(saved) : null;
       });
 
@@ -51,24 +51,20 @@
       const [submissions, setSubmissions] = useState([]);
       
       const [loading, setLoading] = useState(true);
-      const [view, setView] = useState('home'); // home, detail, exam_list, do_exam, admin_panel, statistics
+      const [view, setView] = useState('home');
       const [selectedLecture, setSelectedLecture] = useState(null);
       const [selectedExam, setSelectedExam] = useState(null);
       const [selectedSubjectFolder, setSelectedSubjectFolder] = useState('Tất cả');
 
-      // Modal states
       const [showModalLecture, setShowModalLecture] = useState(false);
       const [showModalExam, setShowModalExam] = useState(false);
 
-      // Form tạo bài giảng
       const [lectureForm, setLectureForm] = useState({
         title: '', subject: 'Toán 9', instructor: 'Hai Ton', videoUrl: '', fileName: 'Tai_lieu.pdf', fileSize: '3.5 MB', fileUrl: '', description: ''
       });
 
-      // Form tạo tài khoản học sinh
       const [studentForm, setStudentForm] = useState({ username: '', password: '' });
 
-      // Form tạo đề thi kiểu Azota & LaTeX import
       const [examForm, setExamForm] = useState({
         title: '',
         duration: 15,
@@ -76,12 +72,10 @@
       });
       const [latexInput, setLatexInput] = useState('');
 
-      // Làm bài thi state
       const [userAnswers, setUserAnswers] = useState({});
       const [timeLeft, setTimeLeft] = useState(0);
       const [examResult, setExamResult] = useState(null);
 
-      // Realtime listener từ Firebase
       useEffect(() => {
         const lecturesRef = db.ref('lectures');
         const examsRef = db.ref('exams');
@@ -118,11 +112,10 @@
       }, []);
 
       useEffect(() => {
-        if (currentUser) localStorage.setItem('current_user_v7', JSON.stringify(currentUser));
-        else localStorage.removeItem('current_user_v7');
+        if (currentUser) localStorage.setItem('current_user_v8', JSON.stringify(currentUser));
+        else localStorage.removeItem('current_user_v8');
       }, [currentUser]);
 
-      // Timer cho làm bài thi
       useEffect(() => {
         if (view === 'do_exam' && timeLeft > 0) {
           const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
@@ -132,7 +125,6 @@
         }
       }, [view, timeLeft, examResult]);
 
-      // Đăng nhập
       const handleLogin = (e) => {
         e.preventDefault();
         setAuthError('');
@@ -186,27 +178,57 @@
         });
       };
 
-      // Xử lý import đề thi từ LaTeX / Text mô phỏng
+      // Thuật toán thông minh phân tích LaTeX chuẩn định dạng \begin{ex} ... \choice ...
       const handleParseLatex = () => {
         if (!latexInput.trim()) {
-          alert('Vui lòng nhập nội dung LaTeX hoặc văn bản đề thi!');
+          alert('Vui lòng nhập nội dung LaTeX!');
           return;
         }
-        // Giả lập parser cơ bản tách các câu hỏi từ text/latex
-        const rawQuestions = latexInput.split(/\\begin\{ex\}|Câu\s+\d+[\.:]/i).filter(Boolean);
-        const parsedQuestions = rawQuestions.map(qText => {
-          return {
-            questionText: qText.trim().substring(0, 100) + '...',
-            options: ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'],
-            correctAnswer: 0
-          };
-        });
 
-        if (parsedQuestions.length > 0) {
-          setExamForm({...examForm, questions: parsedQuestions});
-          alert(`Đã trích xuất thành công ${parsedQuestions.length} câu hỏi từ nguồn tài liệu!`);
-        } else {
-          alert('Không tìm thấy định dạng câu hỏi hợp lệ. Vui lòng kiểm tra lại cấu trúc.');
+        try {
+          // Tách các câu dựa trên môi trường \begin{ex} hoặc chữ "Câu"
+          const rawBlocks = latexInput.split(/\\begin\{ex\}|(?=Câu\s+\d+[\.:])/i).filter(b => b.trim().length > 0);
+          const parsedQuestions = [];
+
+          rawBlocks.forEach(block => {
+            // Tách phần dẫn câu hỏi và phần \choice
+            let parts = block.split(/\\choice/i);
+            let qText = parts[0].replace(/\\end\{ex\}/g, '').replace(/^(Câu\s*\d+[\.:]?)/i, '').trim();
+
+            let options = ['', '', '', ''];
+            if (parts.length > 1) {
+              let choicePart = parts[1];
+              // Lấy các đáp án trong dấu { ... }
+              let matches = choicePart.match(/\{([^}]*)\}/g);
+              if (matches && matches.length >= 4) {
+                for (let i = 0; i < 4; i++) {
+                  options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
+                }
+              } else {
+                // Fallback nếu không đúng cú pháp ngoặc nhọn
+                options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
+              }
+            } else {
+              options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
+            }
+
+            if (qText) {
+              parsedQuestions.push({
+                questionText: qText,
+                options: options,
+                correctAnswer: 0 // Mặc định đáp án đầu tiên là A, admin có thể chỉnh lại
+              });
+            }
+          });
+
+          if (parsedQuestions.length > 0) {
+            setExamForm({...examForm, questions: parsedQuestions});
+            alert(`Đã trích xuất thành công ${parsedQuestions.length} câu hỏi từ mã LaTeX!`);
+          } else {
+            alert('Không tìm thấy cấu trúc câu hỏi hợp lệ. Hãy đảm bảo dùng cú pháp \begin{ex} ... \choice {...}{...}{...}{...}');
+          }
+        } catch (err) {
+          alert('Lỗi phân tích LaTeX: ' + err.message);
         }
       };
 
@@ -246,9 +268,7 @@
           date: new Date().toLocaleString()
         };
 
-        // Lưu kết quả lên Firebase để thống kê
         db.ref('submissions').push(resultData);
-
         setExamResult({ score, total: selectedExam.questions.length, finalScore });
       };
 
@@ -531,7 +551,6 @@
             )}
           </main>
 
-          {/* Modal Đăng Bài Giảng */}
           {showModalLecture && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
@@ -563,11 +582,10 @@
             </div>
           )}
 
-          {/* Modal Tạo Đề Kiểm Tra Từ LaTeX / File */}
           {showModalExam && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold mb-4">Tạo Đề Kiểm Tra & Nhập Từ LaTeX / Text</h3>
+                <h3 className="text-lg font-bold mb-4">Tạo Đề Kiểm Tra & Trích Xuất LaTeX Chuẩn</h3>
                 <form onSubmit={handleAddExam} className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2"><label className="text-xs font-semibold">Tiêu đề bài kiểm tra</label><input required type="text" className="w-full p-2 border rounded text-sm" value={examForm.title} onChange={e=>setExamForm({...examForm, title: e.target.value})} /></div>
@@ -575,9 +593,9 @@
                   </div>
 
                   <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 space-y-2">
-                    <label className="block text-xs font-bold text-yellow-800"><i className="fa-solid fa-code mr-1"></i> Trích xuất câu hỏi nhanh từ mã nguồn LaTeX / Văn bản:</label>
-                    <textarea rows="3" placeholder="Dán nội dung LaTeX (\begin{ex}...) hoặc văn bản câu hỏi vào đây..." className="w-full p-2 border rounded text-xs bg-white" value={latexInput} onChange={e => setLatexInput(e.target.value)}></textarea>
-                    <button type="button" onClick={handleParseLatex} className="bg-yellow-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-yellow-700">Tự động phân tích câu hỏi</button>
+                    <label className="block text-xs font-bold text-yellow-800"><i className="fa-solid fa-code mr-1"></i> Dán mã LaTeX (\begin{ex} ... \choice {...}{...}{...}{...}):</label>
+                    <textarea rows="4" placeholder="\begin{ex}&#10;Nội dung câu hỏi ở đây...&#10;\choice{$x=2$}{$x=3$}{$x=-2$}{$x=-3$}&#10;\end{ex}" className="w-full p-2 border rounded text-xs bg-white font-mono" value={latexInput} onChange={e => setLatexInput(e.target.value)}></textarea>
+                    <button type="button" onClick={handleParseLatex} className="bg-yellow-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-yellow-700">Tự động bóc tách câu hỏi & đáp án</button>
                   </div>
 
                   <div className="border-t pt-3">
