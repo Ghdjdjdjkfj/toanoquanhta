@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hệ Thống Quản Lý Bài Giảng & Kiểm Tra Trực Tuyến</title>
+  <title>Tài Liệu Ôn Tập THCS & THPT</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -38,7 +38,7 @@
 
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
-        const saved = localStorage.getItem('current_user_v4');
+        const saved = localStorage.getItem('current_user_v6');
         return saved ? JSON.parse(saved) : null;
       });
 
@@ -108,8 +108,8 @@
       }, []);
 
       useEffect(() => {
-        if (currentUser) localStorage.setItem('current_user_v4', JSON.stringify(currentUser));
-        else localStorage.removeItem('current_user_v4');
+        if (currentUser) localStorage.setItem('current_user_v6', JSON.stringify(currentUser));
+        else localStorage.removeItem('current_user_v6');
       }, [currentUser]);
 
       // Timer cho làm bài thi
@@ -210,7 +210,7 @@
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
               <div className="text-center mb-6">
                 <i className="fa-solid fa-graduation-cap text-blue-600 text-4xl mb-2"></i>
-                <h1 className="text-2xl font-bold text-gray-800">Tài Liệu Ôn Tập THCS & THPT </h1>
+                <h1 className="text-2xl font-bold text-gray-800">Tài Liệu Ôn Tập THCS & THPT</h1>
                 <p className="text-sm text-gray-500 mt-1">Facebook: Hai Ton</p>
               </div>
 
@@ -225,11 +225,7 @@
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Mật khẩu</label>
                   <input type="password" required className="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} />
                 </div>
-                <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-800 space-y-1">
-                  <p className="font-bold">Tài khoản quản trị mẫu:</p>
-                  <p>👨‍💻 Admin: <code className="bg-white px-1 rounded">admin</code> / <code className="bg-white px-1 rounded">admin123</code></p>
-                </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow">Đăng Nhập</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow mt-2">Đăng Nhập</button>
               </form>
             </div>
           </div>
@@ -241,7 +237,7 @@
           <header className="bg-blue-600 text-white shadow-md py-3 px-6 flex justify-between items-center sticky top-0 z-40">
             <div onClick={() => setView('home')} className="flex items-center space-x-3 cursor-pointer">
               <i className="fa-solid fa-graduation-cap text-2xl"></i>
-              <span className="text-xl font-bold">Hệ Thống Học Tập & Thi Online</span>
+              <span className="text-xl font-bold">Tài Liệu Ôn Tập THCS & THPT</span>
             </div>
 
             <div className="flex items-center space-x-3">
