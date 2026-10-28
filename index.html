@@ -403,7 +403,6 @@
           const fileInput = document.getElementById('lecFileInput');
           let fileUrlVal = document.getElementById('lecFileUrl').value;
 
-          // Nếu người dùng chọn file trực tiếp từ máy, chuyển đổi file thành URL dạng base64 cục bộ
           if (fileInput.files && fileInput.files[0]) {
             const file = fileInput.files[0];
             const reader = new FileReader();
@@ -450,10 +449,10 @@
       };
       db.ref('lectures').push(newLec, err => {
         if (!err) {
-          alert('Đăng bài giảng kèm tài liệu thành công!');
+          alert('Đăng bài giảng thành công!');
           closeModal('modalLec');
         } else {
-          alert('Có lỗi xảy ra khi lưu: ' + err.message);
+          alert('Có lỗi xảy ra: ' + err.message);
         }
       });
     }
