@@ -54,7 +54,7 @@
       'Đề chính thức Sở GD-ĐT Gia Lai (26-27)'
     ];
 
-    let state = {
+    let myAppState = {
       currentUser: null,
       view: 'home',
       selectedSubject: 'Toán 9',
@@ -64,41 +64,41 @@
       students: [],
       submissions: [],
       parsedQuestions: [],
-      selectedExam: null,
-      userAnswers: {},
-      timeLeft: 0,
-      examResult: null,
-      timerInterval: null
+      activeExam: null,
+      answersMap: {},
+      timeRemaining: 0,
+      resultObj: null,
+      timerRef: null
     };
 
-    function init() {
+    function bootApp() {
       db.ref('lectures').on('value', snap => {
         const d = snap.val();
-        state.lectures = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-        render();
+        myAppState.lectures = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        renderUI();
       });
       db.ref('exams').on('value', snap => {
         const d = snap.val();
-        state.exams = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-        render();
+        myAppState.exams = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        renderUI();
       });
       db.ref('students').on('value', snap => {
         const d = snap.val();
-        state.students = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-        render();
+        myAppState.students = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        renderUI();
       });
       db.ref('submissions').on('value', snap => {
         const d = snap.val();
-        state.submissions = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })).reverse() : [];
-        render();
+        myAppState.submissions = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })).reverse() : [];
+        renderUI();
       });
     }
 
-    function render() {
-      const app = document.getElementById('app');
+    function renderUI() {
+      const rootDiv = document.getElementById('app');
       
-      if (!state.currentUser) {
-        app.innerHTML = `
+      if (!myAppState.currentUser) {
+        rootDiv.innerHTML = `
           <div class="min-h-screen bg-blue-600 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
               <h1 class="text-2xl font-bold text-center mb-1 text-gray-800">Tài Liệu Ôn Tập THCS & THPT</h1>
@@ -122,51 +122,51 @@
           const u = document.getElementById('username').value;
           const p = document.getElementById('password').value;
           if (u === 'admin' && p === 'admin123') {
-            state.currentUser = { username: 'Admin', role: 'admin' };
+            myAppState.currentUser = { username: 'Admin', role: 'admin' };
           } else {
-            const found = state.students.find(s => s.username === u && s.password === p);
-            if (found) state.currentUser = { username: found.username, role: 'student' };
+            const found = myAppState.students.find(s => s.username === u && s.password === p);
+            if (found) myAppState.currentUser = { username: found.username, role: 'student' };
             else alert('Tài khoản hoặc mật khẩu không chính xác!');
           }
-          render();
+          renderUI();
         };
         return;
       }
 
       let navButtons = `
-        <button onclick="changeView('home')" class="hover:underline font-semibold">Thư mục</button>
-        <button onclick="changeView('exam_list')" class="hover:underline font-semibold">Kiểm tra</button>
+        <button onclick="navTo('home')" class="hover:underline font-semibold">Thư mục</button>
+        <button onclick="navTo('exam_list')" class="hover:underline font-semibold">Kiểm tra</button>
       `;
-      if (state.currentUser.role === 'admin') {
+      if (myAppState.currentUser.role === 'admin') {
         navButtons += `
-          <button onclick="changeView('statistics')" class="hover:underline font-semibold">Thống kê</button>
-          <button onclick="changeView('admin_panel')" class="hover:underline font-semibold">Quản lý HS</button>
+          <button onclick="navTo('statistics')" class="hover:underline font-semibold">Thống kê</button>
+          <button onclick="navTo('admin_panel')" class="hover:underline font-semibold">Quản lý HS</button>
         `;
       }
 
-      let mainContent = '';
+      let mainArea = '';
 
-      if (state.view === 'home') {
+      if (myAppState.view === 'home') {
         const subjects = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
 
-        const filteredLectures = state.lectures.filter(l => {
-          const mSub = state.selectedSubject === 'Tất cả' || l.subject === state.selectedSubject;
-          const mChap = state.selectedChapter === 'Tất cả' || l.chapter === state.selectedChapter;
+        const filteredLectures = myAppState.lectures.filter(l => {
+          const mSub = myAppState.selectedSubject === 'Tất cả' || l.subject === myAppState.selectedSubject;
+          const mChap = myAppState.selectedChapter === 'Tất cả' || l.chapter === myAppState.selectedChapter;
           return mSub && mChap;
         });
 
-        mainContent = `
+        mainArea = `
           <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
             <div class="flex gap-2 overflow-x-auto pb-2">
-              ${subjects.map(s => `<button onclick="setSubject('${s}')" class="px-3 py-1.5 rounded text-sm font-medium ${state.selectedSubject === s ? 'bg-blue-600 text-white' : 'bg-white border'}">${s}</button>`).join('')}
+              ${subjects.map(s => `<button onclick="pickSubject('${s}')" class="px-3 py-1.5 rounded text-sm font-medium ${myAppState.selectedSubject === s ? 'bg-blue-600 text-white' : 'bg-white border'}">${s}</button>`).join('')}
             </div>
-            ${state.currentUser.role === 'admin' ? `<button onclick="openModal('modalLec')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Đăng Bài Giảng</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalLec')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Đăng Bài Giảng</button>` : ''}
           </div>
 
           <div class="bg-white p-3 rounded border mb-6 space-y-2">
-            <span class="font-bold text-xs text-blue-700 uppercase tracking-wide block border-b pb-1"><i class="fa-solid fa-list-ul mr-1"></i> Danh mục bài học & chủ đề (${state.selectedSubject}):</span>
+            <span class="font-bold text-xs text-blue-700 uppercase tracking-wide block border-b pb-1"><i class="fa-solid fa-list-ul mr-1"></i> Danh mục bài học & chủ đề (${myAppState.selectedSubject}):</span>
             <div class="flex flex-wrap gap-1.5 pt-1">
-              ${chaptersListToan9.map(c => `<button onclick="setChapter('${c.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded text-xs font-medium transition ${state.selectedChapter === c ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">${c}</button>`).join('')}
+              ${chaptersListToan9.map(c => `<button onclick="pickChapter('${c.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded text-xs font-medium transition ${myAppState.selectedChapter === c ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">${c}</button>`).join('')}
             </div>
           </div>
 
@@ -189,21 +189,21 @@
         `;
       }
 
-      if (state.view === 'exam_list') {
-        mainContent = `
+      else if (myAppState.view === 'exam_list') {
+        mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${state.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Từ LaTeX</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Từ LaTeX</button>` : ''}
           </div>
-          ${state.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
+          ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              ${state.exams.map(e => `
+              ${myAppState.exams.map(e => `
                 <div class="bg-white p-4 rounded shadow border flex justify-between items-center">
                   <div>
                     <h3 class="font-bold">${e.title}</h3>
                     <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.questions ? e.questions.length : 0} câu hỏi</p>
                   </div>
-                  <button onclick="startExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Làm bài</button>
+                  <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Làm bài</button>
                 </div>
               `).join('')}
             </div>
@@ -211,25 +211,25 @@
         `;
       }
 
-      if (state.view === 'do_exam' && state.selectedExam) {
-        const exam = state.selectedExam;
-        const minutes = Math.floor(state.timeLeft / 60);
-        const seconds = state.timeLeft % 60;
+      else if (myAppState.view === 'do_exam' && myAppState.activeExam) {
+        const exam = myAppState.activeExam;
+        const mm = Math.floor(myAppState.timeRemaining / 60);
+        const ss = myAppState.timeRemaining % 60;
 
-        mainContent = `
+        mainArea = `
           <div class="bg-white p-6 rounded shadow max-w-3xl mx-auto">
             <div class="flex justify-between items-center border-b pb-4 mb-6 sticky top-14 bg-white z-20">
               <h2 class="text-xl font-bold">${exam.title}</h2>
               <div class="bg-red-100 text-red-700 font-bold px-4 py-2 rounded-lg text-sm">
-                <i class="fa-solid fa-clock mr-1"></i> ${minutes}:${seconds.toString().padStart(2, '0')}
+                <i class="fa-solid fa-clock mr-1"></i> ${mm}:${ss.toString().padStart(2, '0')}
               </div>
             </div>
 
-            ${state.examResult ? `
+            ${myAppState.resultObj ? `
               <div class="text-center py-8">
-                <div class="text-5xl font-bold text-blue-600 mb-2">${state.examResult.finalScore} điểm</div>
-                <p class="text-gray-600 mb-6">Bạn đã trả lời đúng ${state.examResult.score} / ${state.examResult.total} câu hỏi. Điểm số đã được ghi nhận!</p>
-                <button onclick="changeView('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold">Quay lại danh sách đề thi</button>
+                <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} điểm</div>
+                <p class="text-gray-600 mb-6">Bạn đã trả lời đúng ${myAppState.resultObj.score} / ${myAppState.resultObj.total} câu hỏi. Điểm số đã được ghi nhận!</p>
+                <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold">Quay lại danh sách đề thi</button>
               </div>
             ` : `
               <div class="space-y-6">
@@ -238,30 +238,30 @@
                     <p class="font-semibold text-gray-800 mb-3">Câu ${qIdx + 1}: ${q.questionText}</p>
                     <div class="space-y-2">
                       ${q.options.map((opt, optIdx) => `
-                        <label class="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${state.userAnswers[qIdx] === optIdx ? 'bg-blue-100 border-blue-500' : 'bg-white hover:bg-gray-100'}">
-                          <input type="radio" name="q_${qIdx}" ${state.userAnswers[qIdx] === optIdx ? 'checked' : ''} onclick="selectAnswer(${qIdx}, ${optIdx})">
+                        <label class="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${myAppState.answersMap[qIdx] === optIdx ? 'bg-blue-100 border-blue-500' : 'bg-white hover:bg-gray-100'}">
+                          <input type="radio" name="q_${qIdx}" ${myAppState.answersMap[qIdx] === optIdx ? 'checked' : ''} onclick="recordAnswer(${qIdx}, ${optIdx})">
                           <span class="text-sm"><b>${['A', 'B', 'C', 'D'][optIdx]}.</b> ${opt}</span>
                         </label>
                       `).join('')}
                     </div>
                   </div>
                 `).join('')}
-                <button onclick="submitExam()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow hover:bg-green-700">Nộp Bài Thi & Chấm Điểm</button>
+                <button onclick="finishExam()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow hover:bg-green-700">Nộp Bài Thi & Chấm Điểm</button>
               </div>
             `}
           </div>
         `;
       }
 
-      if (state.view === 'statistics') {
-        mainContent = `
+      else if (myAppState.view === 'statistics') {
+        mainArea = `
           <div class="bg-white p-6 rounded shadow">
             <h2 class="text-xl font-bold mb-4">Thống Kê Điểm Số Học Sinh</h2>
-            ${state.submissions.length === 0 ? `<p class="text-gray-500 text-center py-6">Chưa có dữ liệu bài nộp.</p>` : `
+            ${myAppState.submissions.length === 0 ? `<p class="text-gray-500 text-center py-6">Chưa có dữ liệu bài nộp.</p>` : `
               <table class="w-full text-left text-sm border-collapse">
                 <thead><tr class="bg-gray-100 border-b"><th class="p-2">Học sinh</th><th class="p-2">Bài thi</th><th class="p-2">Điểm</th><th class="p-2">Thời gian</th></tr></thead>
                 <tbody>
-                  ${state.submissions.map(s => `<tr class="border-b"><td class="p-2 font-semibold">${s.studentName}</td><td class="p-2">${s.examTitle}</td><td class="p-2 font-bold text-blue-600">${s.score}</td><td class="p-2 text-xs text-gray-500">${s.date}</td></tr>`).join('')}
+                  ${myAppState.submissions.map(s => `<tr class="border-b"><td class="p-2 font-semibold">${s.studentName}</td><td class="p-2">${s.examTitle}</td><td class="p-2 font-bold text-blue-600">${s.score}</td><td class="p-2 text-xs text-gray-500">${s.date}</td></tr>`).join('')}
                 </tbody>
               </table>
             `}
@@ -269,8 +269,8 @@
         `;
       }
 
-      if (state.view === 'admin_panel') {
-        mainContent = `
+      else if (myAppState.view === 'admin_panel') {
+        mainArea = `
           <div class="bg-white p-6 rounded shadow">
             <h2 class="text-xl font-bold mb-4">Quản Lý Tài Khoản Học Sinh</h2>
             <form id="addStuForm" class="flex gap-2 mb-6">
@@ -281,28 +281,28 @@
             <table class="w-full text-left text-sm border-collapse">
               <thead><tr class="bg-gray-100 border-b"><th class="p-2">Tên đăng nhập</th><th class="p-2">Mật khẩu</th><th class="p-2 text-right">Thao tác</th></tr></thead>
               <tbody>
-                ${state.students.map(s => `<tr class="border-b"><td class="p-2 font-semibold">${s.username}</td><td class="p-2">${s.password}</td><td class="p-2 text-right"><button onclick="deleteStudent('${s.id}')" class="text-red-600 text-xs font-bold">Xóa</button></td></tr>`).join('')}
+                ${myAppState.students.map(s => `<tr class="border-b"><td class="p-2 font-semibold">${s.username}</td><td class="p-2">${s.password}</td><td class="p-2 text-right"><button onclick="deleteStudent('${s.id}')" class="text-red-600 text-xs font-bold">Xóa</button></td></tr>`).join('')}
               </tbody>
             </table>
           </div>
         `;
       }
 
-      app.innerHTML = `
+      rootDiv.innerHTML = `
         <div class="min-h-screen flex flex-col">
           <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow sticky top-0 z-40">
-            <div onclick="changeView('home')" class="font-bold text-lg cursor-pointer flex items-center gap-2">
+            <div onclick="navTo('home')" class="font-bold text-lg cursor-pointer flex items-center gap-2">
               <i class="fa-solid fa-graduation-cap"></i> Tài Liệu Ôn Tập THCS & THPT
             </div>
             <div class="flex items-center gap-4 text-sm font-medium">
               ${navButtons}
-              <span class="bg-blue-700 px-3 py-1 rounded">${state.currentUser.username}</span>
-              <button onclick="logout()" class="text-red-200 hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></button>
+              <span class="bg-blue-700 px-3 py-1 rounded">${myAppState.currentUser.username}</span>
+              <button onclick="logOut()" class="text-red-200 hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
           </header>
 
           <main class="max-w-6xl w-full mx-auto p-6 flex-1">
-            ${mainContent}
+            ${mainArea}
           </main>
         </div>
 
@@ -420,75 +420,75 @@
           const newExam = {
             title: document.getElementById('examTitle').value,
             duration: Number(document.getElementById('examDuration').value),
-            questions: state.parsedQuestions.length > 0 ? state.parsedQuestions : [{ questionText: 'Câu hỏi mẫu', options: ['A','B','C','D'], correctAnswer: 0 }]
+            questions: myAppState.parsedQuestions.length > 0 ? myAppState.parsedQuestions : [{ questionText: 'Câu hỏi mẫu', options: ['A','B','C','D'], correctAnswer: 0 }]
           };
           db.ref('exams').push(newExam, err => {
             if (!err) {
               alert('Tạo đề kiểm tra thành công!');
               closeModal('modalExam');
-              state.parsedQuestions = [];
+              myAppState.parsedQuestions = [];
             }
           });
         };
       }
     }
 
-    function changeView(v) { 
-      if (state.timerInterval) clearInterval(state.timerInterval);
-      state.view = v; 
-      render(); 
+    function navTo(v) { 
+      if (myAppState.timerRef) clearInterval(myAppState.timerRef);
+      myAppState.view = v; 
+      renderUI(); 
     }
-    function setSubject(s) { state.selectedSubject = s; render(); }
-    function setChapter(c) { state.selectedChapter = c; render(); }
-    function logout() { if(state.timerInterval) clearInterval(state.timerInterval); state.currentUser = null; render(); }
+    function pickSubject(s) { myAppState.selectedSubject = s; renderUI(); }
+    function pickChapter(c) { myAppState.selectedChapter = c; renderUI(); }
+    function logOut() { if(myAppState.timerRef) clearInterval(myAppState.timerRef); myAppState.currentUser = null; renderUI(); }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function deleteStudent(id) { if(confirm('Xóa học sinh này?')) db.ref('students/' + id).remove(); }
 
-    function startExam(examId) {
-      const exam = state.exams.find(e => e.id === examId);
+    function launchExam(examId) {
+      const exam = myAppState.exams.find(e => e.id === examId);
       if (!exam) return;
-      state.selectedExam = exam;
-      state.userAnswers = {};
-      state.timeLeft = (exam.duration || 15) * 60;
-      state.examResult = null;
-      state.view = 'do_exam';
-      render();
+      myAppState.activeExam = exam;
+      myAppState.answersMap = {};
+      myAppState.timeRemaining = (exam.duration || 15) * 60;
+      myAppState.resultObj = null;
+      myAppState.view = 'do_exam';
+      renderUI();
 
-      if (state.timerInterval) clearInterval(state.timerInterval);
-      state.timerInterval = setInterval(() => {
-        if (state.timeLeft > 0 && !state.examResult) {
-          state.timeLeft--;
+      if (myAppState.timerRef) clearInterval(myAppState.timerRef);
+      myAppState.timerRef = setInterval(() => {
+        if (myAppState.timeRemaining > 0 && !myAppState.resultObj) {
+          myAppState.timeRemaining--;
           const clockEl = document.querySelector('.bg-red-100');
           if (clockEl) {
-            const m = Math.floor(state.timeLeft / 60);
-            const s = state.timeLeft % 60;
-            clockEl.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> ${m}:${s.toString().padStart(2, '0')}`;
+            const mm = Math.floor(myAppState.timeRemaining / 60);
+            const ss = myAppState.timeRemaining % 60;
+            clockEl.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> ${mm}:${ss.toString().padStart(2, '0')}`;
           }
-        } else if (state.timeLeft === 0 && !state.examResult) {
-          clearInterval(state.timerInterval);
-          submitExam();
+        } else if (myAppState.timeRemaining === 0 && !myAppState.resultObj) {
+          clearInterval(myAppState.timerRef);
+          finishExam();
         }
       }, 1000);
     }
 
-    function selectAnswer(qIdx, optIdx) {
-      state.userAnswers[qIdx] = optIdx;
+    function recordAnswer(qIdx, optIdx) {
+      myAppState.answersMap[qIdx] = optIdx;
     }
 
-    function submitExam() {
-      if (state.timerInterval) clearInterval(state.timerInterval);
-      if (!state.selectedExam) return;
+    function finishExam() {
+      if (myAppState.timerRef) clearInterval(myAppState.timerRef);
+      if (!myAppState.activeExam) return;
       let score = 0;
-      const questions = state.selectedExam.questions || [];
+      const questions = myAppState.activeExam.questions || [];
       questions.forEach((q, idx) => {
-        if (state.userAnswers[idx] === q.correctAnswer) score++;
+        if (myAppState.answersMap[idx] === q.correctAnswer) score++;
       });
       const finalScore = Number(((score / questions.length) * 10).toFixed(1));
       
       const subData = {
-        examTitle: state.selectedExam.title,
-        studentName: state.currentUser.username,
+        examTitle: myAppState.activeExam.title,
+        studentName: myAppState.currentUser.username,
         score: finalScore,
         correctCount: score,
         totalQuestions: questions.length,
@@ -496,8 +496,8 @@
       };
 
       db.ref('submissions').push(subData);
-      state.examResult = { score, total: questions.length, finalScore };
-      render();
+      myAppState.resultObj = { score, total: questions.length, finalScore };
+      renderUI();
     }
 
     function parseLatexCode() {
@@ -516,10 +516,10 @@
               for (let i = 0; i < 4; i++) options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
             }
           }
-          if (qTest) parsed.push({ questionText: qText, options, correctAnswer: 0 });
+          if (qText) parsed.push({ questionText: qText, options, correctAnswer: 0 });
         });
         if (parsed.length > 0) {
-          state.parsedQuestions = parsed;
+          myAppState.parsedQuestions = parsed;
           document.getElementById('latexStatus').innerText = `Đã bóc tách thành công ${parsed.length} câu hỏi!`;
           alert(`Đã bóc tách thành công ${parsed.length} câu hỏi!`);
         } else {
@@ -530,7 +530,7 @@
       }
     }
 
-    init();
+    bootApp();
   </script>
 </body>
 </html>
