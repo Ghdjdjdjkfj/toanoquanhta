@@ -30,7 +30,6 @@
       measurementId: "G-NH4MZXP235"
     };
 
-    // Khởi tạo Firebase
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
@@ -40,7 +39,7 @@
 
     function App() {
       const [currentUser, setCurrentUser] = useState(() => {
-        const savedUser = localStorage.getItem('current_user_cloud');
+        const savedUser = localStorage.getItem('current_user_cloud_v2');
         return savedUser ? JSON.parse(savedUser) : null;
       });
 
@@ -54,7 +53,6 @@
       const [showModal, setShowModal] = useState(false);
       const [view, setView] = useState('home');
 
-      // Form đăng bài mới (Admin)
       const [formData, setFormData] = useState({
         title: '',
         subject: 'Toán 9',
@@ -66,7 +64,7 @@
         description: ''
       });
 
-      // Đọc dữ liệu bài giảng thời gian thực từ đám mây Firebase
+      // Lấy dữ liệu bài giảng real-time từ Firebase
       useEffect(() => {
         const lecturesRef = db.ref('lectures');
         lecturesRef.on('value', (snapshot) => {
@@ -77,11 +75,10 @@
               ...data[key]
             })).reverse();
             setLectures(list);
-            if (!selectedLecture && list.length > 0) {
-              setSelectedLecture(list[0]);
-            }
+            setSelectedLecture(prev => prev ? list.find(item => item.id === prev.id) || list[0] : list[0]);
           } else {
             setLectures([]);
+            setSelectedLecture(null);
           }
           setLoading(false);
         });
@@ -91,9 +88,9 @@
 
       useEffect(() => {
         if (currentUser) {
-          localStorage.setItem('current_user_cloud', JSON.stringify(currentUser));
+          localStorage.setItem('current_user_cloud_v2', JSON.stringify(currentUser));
         } else {
-          localStorage.removeItem('current_user_cloud');
+          localStorage.removeItem('current_user_cloud_v2');
         }
       }, [currentUser]);
 
@@ -110,7 +107,7 @@
           return;
         }
 
-        const savedAccounts = JSON.parse(localStorage.getItem('registered_accounts_cloud') || '[]');
+        const savedAccounts = JSON.parse(localStorage.getItem('registered_accounts_cloud_v2') || '[]');
         const found = savedAccounts.find(acc => acc.username === loginForm.username && acc.password === loginForm.password);
         
         if (found) {
@@ -128,7 +125,7 @@
           return;
         }
 
-        const savedAccounts = JSON.parse(localStorage.getItem('registered_accounts_cloud') || '[]');
+        const savedAccounts = JSON.parse(localStorage.getItem('registered_accounts_cloud_v2') || '[]');
         if (savedAccounts.some(acc => acc.username === loginForm.username) || loginForm.username === 'admin') {
           setAuthError('Tên tài khoản này đã tồn tại!');
           return;
@@ -136,7 +133,7 @@
 
         const newAcc = { username: loginForm.username, password: loginForm.password, role: 'student' };
         savedAccounts.push(newAcc);
-        localStorage.setItem('registered_accounts_cloud', JSON.stringify(savedAccounts));
+        localStorage.setItem('registered_accounts_cloud_v2', JSON.stringify(savedAccounts));
         
         alert('Đăng ký thành công! Hãy đăng nhập để học.');
         setLoginTab('login');
@@ -169,7 +166,7 @@
           if (error) {
             alert("Lỗi đăng bài: " + error.message);
           } else {
-            alert("Đã đăng bài giảng công khai thành công! Tất cả học sinh đã có thể nhìn thấy.");
+            alert("Đã đăng bài giảng công khai thành công lên đám mây!");
             setShowModal(false);
             setFormData({ title: '', subject: 'Toán 9', instructor: '', videoUrl: '', fileName: 'De_thi_Toan9.pdf', fileSize: '3.5 MB', fileUrl: '', description: '' });
           }
@@ -183,7 +180,7 @@
               <div className="text-center mb-6">
                 <i className="fa-solid fa-graduation-cap text-blue-600 text-4xl mb-2"></i>
                 <h1 className="text-2xl font-bold text-gray-800">Cổng Học Tập Bài Giảng</h1>
-                <p className="text-sm text-gray-500 mt-1">Dữ liệu kết nối Đám Mây Trực Tuyến</p>
+                <p className="text-sm text-gray-500 mt-1">Đăng nhập để vào lớp học</p>
               </div>
 
               <div className="flex border-b mb-6">
@@ -204,7 +201,7 @@
                     <input type="password" required placeholder="••••••••" className="w-full p-3 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} />
                   </div>
                   <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-800 space-y-1">
-                    <p className="font-bold">Tài khoản mẫu:</p>
+                    <p className="font-bold">Tài khoản mẫu dùng thử:</p>
                     <p>👨‍💻 Admin: <code className="bg-white px-1 rounded">admin</code> / Mật khẩu: <code className="bg-white px-1 rounded">admin123</code></p>
                     <p>🧑‍🎓 Học sinh: <code className="bg-white px-1 rounded">hocsinh</code> / Mật khẩu: <code className="bg-white px-1 rounded">hs123</code></p>
                   </div>
@@ -275,8 +272,8 @@
                     <p>Đang tải danh sách bài giảng từ Đám Mây Cloud...</p>
                   </div>
                 ) : lectures.length === 0 ? (
-                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500">
-                    Chưa có bài giảng nào được đăng. Admin hãy bấm "Đăng Bài Mới" để tạo bài học đầu tiên!
+                  <div className="bg-white p-8 text-center rounded-xl border text-gray-500 shadow-sm">
+                    Chưa có bài giảng nào trên hệ thống. Admin hãy bấm "Đăng Bài Mới" để thêm bài học!
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -300,7 +297,7 @@
                   </div>
                 )}
               </div>
-            ) : (
+            ) : selectedLecture ? (
               <div className="bg-white rounded-xl shadow-md p-6">
                 <button onClick={() => setView('home')} className="mb-4 text-blue-600 hover:underline flex items-center text-sm font-medium">
                   <i className="fa-solid fa-arrow-left mr-1"></i> Quay lại Trang Chủ
@@ -351,7 +348,7 @@
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           {showModal && currentUser.role === 'admin' && (
