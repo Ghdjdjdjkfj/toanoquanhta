@@ -459,7 +459,6 @@
       state.timerInterval = setInterval(() => {
         if (state.timeLeft > 0 && !state.examResult) {
           state.timeLeft--;
-          // Cập nhật hiển thị đồng hồ trực tiếp
           const clockEl = document.querySelector('.bg-red-100');
           if (clockEl) {
             const m = Math.floor(state.timeLeft / 60);
@@ -517,7 +516,7 @@
               for (let i = 0; i < 4; i++) options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
             }
           }
-          if (qText) parsed.push({ questionText: qText, options, correctAnswer: 0 });
+          if (qTest) parsed.push({ questionText: qText, options, correctAnswer: 0 });
         });
         if (parsed.length > 0) {
           state.parsedQuestions = parsed;
