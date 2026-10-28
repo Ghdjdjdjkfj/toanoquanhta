@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống Đăng Tải & Học Bài Giảng</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const initialLectures = [
+      {
+        id: 1,
+        title: "Lập trình ReactJS từ cơ bản đến nâng cao",
+        subject: "Công nghệ thông tin",
+        level: "Trung bình",
+        instructor: "ThS. Nguyễn Văn A",
+        date: "2026-10-20",
+        videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+        description: "Khóa học chi tiết về React Hooks, State Management, và cách xây dựng ứng dụng web hiện đại.",
+        files: [
+          { name: "Giao_trinh_ReactJS.pdf", size: "2.4 MB", type: "pdf" },
+          { name: "Bai_tap_thuc_hanh.docx", size: "1.1 MB", type: "doc" }
+        ],
+        views: 1250,
+        comments: [
+          { user: "Học viên Minh", text: "Bài giảng rất hay và dễ hiểu!", date: "2026-10-21" }
+        ]
+      },
+      {
+        id: 2,
+        title: "Toán 9: Giải hệ phương trình bậc nhất hai ẩn",
+        subject: "Toán học",
+        level: "Cơ bản",
+        instructor: "Cô Lê Thị B",
+        date: "2026-10-25",
+        videoUrl: "https://www.w3schools.com/html/movie.mp4",
+        description: "Phương pháp thế và phương pháp cộng đại số trong giải hệ phương trình.",
+        files: [
+          { name: "De_thi_am_tap_Toan9.pdf", size: "3.5 MB", type: "pdf" }
+        ],
+        views: 840,
+        comments: []
+      }
+    ];
+
+    function App() {
+      const [lectures, setLectures] = useState(initialLectures);
+      const [selectedLecture, setSelectedLecture] = useState(initialLectures[0]);
+      const [searchTerm, setSearchTerm] = useState("");
+      const [selectedSubject, setSelectedSubject] = useState("All");
+      const [showUploadModal, setShowUploadModal] = useState(false);
+      const [newComment, setNewComment] = useState("");
+
+      // Form state
+      const [formData, setFormData] = useState({
+        title: '',
+        subject: 'Công nghệ thông tin',
+        level: 'Cơ bản',
+        instructor: '',
+        description: '',
+        videoUrl: '',
+        fileName: ''
+      });
+
+      const filteredLectures = lectures.filter(l => {
+        const matchesSearch = l.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              l.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSubject = selectedSubject === "All" || l.subject === selectedSubject;
+        return matchesSearch && matchesSubject;
+      });
+
+      const handleAddComment = (e) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+        const updated = {
+          ...selectedLecture,
+          comments: [...selectedLecture.comments, { user: "Bạn", text: newComment, date: "Vừa xong" }]
+        };
+        setSelectedLecture(updated);
+        setLectures(lectures.map(l => l.id === updated.id ? updated : l));
+        setNewComment("");
+      };
+
+      const handleUploadSubmit = (e) => {
+        e.preventDefault();
+        const newEntry = {
+          id: Date.now(),
+          title: formData.title,
+          subject: formData.subject,
+          level: formData.level,
+          instructor: formData.instructor || "Giảng viên",
+          date: new Date().toISOString().split('T')[0],
+          videoUrl: formData.videoUrl || "https://www.w3schools.com/html/mov_bbb.mp4",
+          description: formData.description,
+          files: formData.fileName ? [{ name: formData.fileName, size: "2.0 MB", type: "pdf" }] : [],
+          views: 1,
+          comments: []
+        };
+        setLectures([newEntry, ...lectures]);
+        setSelectedLecture(newEntry);
+        setShowUploadModal(false);
+        setFormData({ title: '', subject: 'Công nghệ thông tin', level: 'Cơ bản', instructor: '', description: '', videoUrl: '', fileName: '' });
+      };
+
+      return (
+        <div class="min-h-screen flex flex-col bg-gray-100">
+          {/* Header */}
+          <header class="bg-indigo-600 text-white shadow-lg py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-[# graduation-cap] text-3xl"></i>
+              <h1 class="text-xl font-bold tracking-wide">Hệ Thống Bài Giảng & Tài Liệu</h1>
+            </div>
+            <button 
+              onClick={() => setShowUploadModal(true)}
+              class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium shadow transition flex items-center space-x-2">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Đăng Bài Giảng</span>
+            </button>
+          </header>
+
+          <div class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Cột trái & giữa: Trình phát Video & Chi tiết bài giảng */}
+            <div class="lg:col-span-2 space-y-6">
+              {selectedLecture ? (
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                  {/* Video Player */}
+                  <div class="bg-black aspect-video w-full">
+                    <video 
+                      key={selectedLecture.id} 
+                      controls 
+                      class="w-full h-full object-contain"
+                    >
+                      <source src={selectedLecture.videoUrl} type="video/mp4" />
+                      Trình duyệt của bạn không hỗ trợ phát video.
+                    </video>
+                  </div>
+
+                  {/* Nội dung bài học */}
+                  <div class="p-6">
+                    <div class="flex justify-between items-start flex-wrap gap-2">
+                      <h2 class="text-2xl font-bold text-gray-900">{selectedLecture.title}</h2>
+                      <span class="bg-indigo-100 text-indigo-800 text-xs px-3 py-1 rounded-full font-semibold">
+                        {selectedLecture.subject}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center space-x-4 text-sm text-gray-500 mt-2">
+                      <span><i class="fa-solid fa-user-tie mr-1"></i> {selectedLecture.instructor}</span>
+                      <span><i class="fa-regular fa-calendar mr-1"></i> {selectedLecture.date}</span>
+                      <span><i class="fa-regular fa-eye mr-1"></i> {selectedLecture.views} lượt xem</span>
+                    </div>
+
+                    <p class="mt-4 text-gray-700 leading-relaxed">{selectedLecture.description}</p>
+
+                    {/* Danh sách File đính kèm */}
+                    <div class="mt-6 border-t pt-4">
+                      <h3 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                        <i class="fa-solid fa-paperclip text-indigo-500 mr-2"></i> File Tài Liệu Đính Kèm
+                      </h3>
+                      {selectedLecture.files.length > 0 ? (
+                        <div class="space-y-2">
+                          {selectedLecture.files.map((file, idx) => (
+                            <div key={idx} class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border hover:bg-gray-100 transition">
+                              <div class="flex items-center space-x-3">
+                                <i class="fa-solid fa-file-pdf text-red-500 text-xl"></i>
+                                <div>
+                                  <p class="text-sm font-medium text-gray-800">{file.name}</p>
+                                  <p class="text-xs text-gray-500">{file.size}</p>
+                                </div>
+                              </div>
+                              <button class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center space-x-1">
+                                <i class="fa-solid fa-download"></i>
+                                <span>Tải xuống</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p class="text-sm text-gray-500 italic">Không có tài liệu đi kèm.</p>
+                      )}
+                    </div>
+
+                    {/* Phần Bình luận */}
+                    <div class="mt-8 border-t pt-6">
+                      <h3 class="text-lg font-bold text-gray-800 mb-4">Thảo luận & Hỏi đáp</h3>
+                      <form onSubmit={handleAddComment} class="flex gap-2 mb-6">
+                        <input 
+                          type="text" 
+                          placeholder="Viết bình luận hoặc câu hỏi..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700">
+                          Gửi
+                        </button>
+                      </form>
+
+                      <div class="space-y-3">
+                        {selectedLecture.comments.map((c, i) => (
+                          <div key={i} class="bg-gray-50 p-3 rounded-lg">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                              <span class="font-bold text-gray-700">{c.user}</span>
+                              <span>{c.date}</span>
+                            </div>
+                            <p class="text-sm text-gray-800">{c.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div class="bg-white p-12 text-center rounded-xl text-gray-500">
+                  Vui lòng chọn bài giảng để xem
+                </div>
+              )}
+            </div>
+
+            {/* Cột phải: Bộ lọc & Danh sách bài giảng */}
+            <div class="space-y-4">
+              <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                <div class="relative">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
+                  <input 
+                    type="text" 
+                    placeholder="Tìm kiếm bài giảng..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    class="w-full pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                  />
+                </div>
+                
+                <select 
+                  value={selectedSubject} 
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  class="w-full p-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                >
+                  <option value="All">Tất cả môn học</option>
+                  <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                  <option value="Toán học">Toán học</option>
+                </select>
+              </div>
+
+              {/* List */}
+              <div class="space-y-3">
+                <h3 class="font-bold text-gray-700">Danh sách bài giảng ({filteredLectures.length})</h3>
+                {filteredLectures.map(lecture => (
+                  <div 
+                    key={lecture.id}
+                    onClick={() => setSelectedLecture(lecture)}
+                    class={`p-4 rounded-xl cursor-pointer transition shadow-sm border ${
+                      selectedLecture?.id === lecture.id 
+                        ? 'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-200' 
+                        : 'bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                      {lecture.subject}
+                    </span>
+                    <h4 class="font-bold text-gray-900 mt-1 line-clamp-2">{lecture.title}</h4>
+                    <p class="text-xs text-gray-500 mt-2 flex justify-between">
+                      <span><i class="fa-solid fa-chalkboard-user"></i> {lecture.instructor}</span>
+                      <span><i class="fa-solid fa-paperclip"></i> {lecture.files.length} file</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Modal Đăng bài mới */}
+          {showUploadModal && (
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+                <button 
+                  onClick={() => setShowUploadModal(false)}
+                  class="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
+                  <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Tải lên bài giảng mới</h2>
+                
+                <form onSubmit={handleUploadSubmit} class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên bài giảng</label>
+                    <input 
+                      required 
+                      type="text" 
+                      class="w-full p-2 border rounded-lg"
+                      value={formData.title}
+                      onChange={e => setFormData({...formData, title: e.target.value})}
+                    />
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Môn học</label>
+                      <select 
+                        class="w-full p-2 border rounded-lg bg-white"
+                        value={formData.subject}
+                        onChange={e => setFormData({...formData, subject: e.target.value})}
+                      >
+                        <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                        <option value="Toán học">Toán học</option>
+                        <option value="Tiếng Anh">Tiếng Anh</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Giảng viên</label>
+                      <input 
+                        type="text" 
+                        class="w-full p-2 border rounded-lg"
+                        value={formData.instructor}
+                        onChange={e => setFormData({...formData, instructor: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Link Video MP4 (URL)</label>
+                    <input 
+                      type="url" 
+                      placeholder="https://..."
+                      class="w-full p-2 border rounded-lg"
+                      value={formData.videoUrl}
+                      onChange={e => setFormData({...formData, videoUrl: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên tài liệu đính kèm (.pdf, .doc)</label>
+                    <input 
+                      type="text" 
+                      placeholder="VD: Tailieu_Bai1.pdf"
+                      class="w-full p-2 border rounded-lg"
+                      value={formData.fileName}
+                      onChange={e => setFormData({...formData, fileName: e.target.value})}
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả bài giảng</label>
+                    <textarea 
+                      rows="3" 
+                      class="w-full p-2 border rounded-lg"
+                      value={formData.description}
+                      onChange={e => setFormData({...formData, description: e.target.value})}
+                    ></textarea>
+                  </div>
+
+                  <div class="flex justify-end space-x-3 pt-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setShowUploadModal(false)}
+                      class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100">
+                      Hủy
+                    </button>
+                    <button 
+                      type="submit" 
+                      class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                      Đăng bài
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
