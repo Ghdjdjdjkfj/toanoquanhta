@@ -135,7 +135,6 @@
       return tetWishes[dayOfYear % tetWishes.length];
     }
 
-    // TÍNH NGÀY LỄ GẦN NHẤT
     function getNextHoliday() {
       const now = new Date();
       const currentYear = now.getFullYear();
@@ -167,38 +166,65 @@
       return upcoming;
     }
 
-    // ĐỒNG HỒ ĐẾM NGƯỢC TẾT 2027 VÀ TỰ ĐỘNG BÁO NGÀY LỄ
+    // ĐỒNG HỒ ĐẾM NGƯỢC KẺ Ô CHO TỪNG SỐ (DAYS - HOURS - MINS - SECS)
     function startTetCountdown() {
       if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
       
-      // Mùng 1 Tết Đinh Mùi 2027 (06/02/2027)
       const tet2027Date = new Date('2027-02-06T00:00:00');
 
       function updateTimer() {
         const now = new Date();
         const diff = tet2027Date - now;
 
-        const countdownEl = document.getElementById('tetCountdownDisplay');
+        const boxesEl = document.getElementById('tetCountdownBoxes');
         const holidayEl = document.getElementById('holidayCountdownDisplay');
-        if (!countdownEl) return;
+        if (!boxesEl) return;
 
-        // 1. Đếm ngược Giờ, Phút, Giây Tết 2027
         if (diff <= 0 && diff > -86400000 * 3) {
-          countdownEl.innerHTML = `<span class="text-yellow-300 font-bold animate-bounce">🧧 CHÚC MỪNG NĂM MỚI 2027 (ĐINH MÙI)!</span> Vạn sự như ý - An khang thịnh vượng!`;
+          boxesEl.innerHTML = `<div class="text-yellow-300 font-bold text-lg animate-bounce py-2">🧧 CHÚC MỪNG NĂM MỚI 2027 (ĐINH MÙI)! Vạn sự như ý!</div>`;
         } else {
           const days = Math.floor(diff / (1000 * 60 * 60 * 24));
           const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
           const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-          countdownEl.innerHTML = `⏳ Đếm ngược Tết Đinh Mùi 2027: <b class="text-yellow-200">${days} ngày ${hours} giờ ${minutes} phút ${seconds} giây</b> (Mùng 1: 06/02/2027)`;
+          boxesEl.innerHTML = `
+            <div class="flex items-center gap-2 sm:gap-3 my-1">
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
+                  ${String(days).padStart(2, '0')}
+                </div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Ngày</span>
+              </div>
+              <span class="text-yellow-300 font-bold text-lg sm:text-xl pb-4">:</span>
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
+                  ${String(hours).padStart(2, '0')}
+                </div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Giờ</span>
+              </div>
+              <span class="text-yellow-300 font-bold text-lg sm:text-xl pb-4">:</span>
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
+                  ${String(minutes).padStart(2, '0')}
+                </div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Phút</span>
+              </div>
+              <span class="text-yellow-300 font-bold text-lg sm:text-xl pb-4">:</span>
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
+                  ${String(seconds).padStart(2, '0')}
+                </div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Giây</span>
+              </div>
+            </div>
+          `;
         }
 
-        // 2. Cập nhật ngày lễ gần nhất
         if (holidayEl) {
           const nextH = getNextHoliday();
           if (nextH) {
-            holidayEl.innerHTML = `🎉 Sự kiện tiếp theo: <b class="text-amber-200">${nextH.name}</b> - còn <b class="text-yellow-300">${nextH.diffDays} ngày</b> nữa!`;
+            holidayEl.innerHTML = `🎉 Sự kiện tiếp theo: <b class="text-amber-200">${nextH.name}</b> - còn <b class="text-yellow-300 font-bold">${nextH.diffDays} ngày</b>!`;
           }
         }
       }
@@ -268,19 +294,24 @@
         });
 
         mainArea = `
-          <!-- BANNER ĐẾM NGƯỢC TẾT 2027 VÀ BÁO NGÀY LỄ LỚN -->
-          <div id="tetBannerContent" class="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white p-4 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-3 border border-red-400">
-            <div class="space-y-1.5 text-center md:text-left">
+          <!-- BANNER ĐẾM NGƯỢC KẺ Ô TỪNG SỐ TẾT 2027 -->
+          <div id="tetBannerContent" class="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white p-4 sm:p-5 rounded-2xl shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-red-400">
+            <div class="space-y-2 text-center md:text-left flex-1">
               <div class="text-[11px] uppercase tracking-widest text-yellow-200 font-bold flex items-center justify-center md:justify-start gap-1">
                 <i class="fa-solid fa-seedling"></i> Chào xuân Đinh Mùi 2027
               </div>
-              <div id="tetCountdownDisplay" class="text-sm md:text-base font-bold">Đang tải đồng hồ đếm ngược...</div>
+              
+              <div id="tetCountdownBoxes" class="flex justify-center md:justify-start">
+                <!-- Các ô số sẽ tự động render vào đây -->
+              </div>
+
               <div id="holidayCountdownDisplay" class="text-xs text-yellow-100 font-medium">Đang tính sự kiện tiếp theo...</div>
               <div class="text-xs text-red-100 italic pt-1 border-t border-red-400/50"><i class="fa-solid fa-quote-left mr-1"></i> ${getDailyTetWish()}</div>
             </div>
-            <div class="bg-black/20 px-4 py-2.5 rounded-xl text-center border border-white/20 shrink-0">
-              <span class="text-[10px] uppercase block text-yellow-300 font-bold">Mùng 1 Tết 2027</span>
-              <span class="text-sm font-bold">06/02/2027</span>
+
+            <div class="bg-black/30 p-3 sm:p-4 rounded-2xl text-center border border-white/20 shrink-0 shadow-inner">
+              <span class="text-[10px] uppercase block text-yellow-300 font-bold tracking-wider">Mùng 1 Tết 2027</span>
+              <span class="text-base sm:text-lg font-black text-white">06/02/2027</span>
             </div>
           </div>
 
