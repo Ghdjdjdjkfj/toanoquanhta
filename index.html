@@ -203,6 +203,7 @@
                     <p class="text-[11px] text-indigo-600 font-semibold mt-1 truncate">${l.chapter || ''}</p>
                     <h3 class="font-bold text-base mt-1">${l.title}</h3>
                     <p class="text-xs text-gray-500 mt-1">GV: ${l.instructor || 'Hai Ton'}</p>
+                    <p class="text-xs text-gray-600 mt-2 line-clamp-2">${l.description || ''}</p>
                   </div>
                   <div class="mt-4 flex gap-2">
                     ${l.fileUrl ? `<a href="${l.fileUrl}" download="${l.fileName || 'TaiLieu'}" class="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-semibold text-center hover:bg-blue-700"><i class="fa-solid fa-download mr-1"></i> Tải tài liệu</a>` : ''}
@@ -218,7 +219,7 @@
         mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (AI Quét Đáp Án)</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (Tự Nhập Đáp Án)</button>` : ''}
           </div>
           ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -409,23 +410,70 @@
           </main>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI TÍCH HỢP AI QUÉT ĐÁP ÁN -->
+        <!-- MODAL ĐĂNG BÀI GIẢNG -->
+        <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-lg">Đăng Bài Giảng Mới</h3>
+            <form id="formAddLec" class="space-y-3 text-sm">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Tên bài học</label>
+                <input type="text" id="lecTitle" required class="w-full p-2 border rounded">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Môn học</label>
+                  <select id="lecSubject" class="w-full p-2 border rounded bg-white">
+                    <option value="Toán 9">Toán 9</option>
+                    <option value="Toán 8">Toán 8</option>
+                    <option value="Toán 7">Toán 7</option>
+                    <option value="Đại số 10">Đại số 10</option>
+                    <option value="Hình học 11">Hình học 11</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Chương / Mục</label>
+                  <select id="lecChapter" class="w-full p-2 border rounded bg-white">
+                    ${chaptersListToan9.filter(c => c !== 'Tất cả').map(c => `<option value="${c}">${c}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Chọn tệp tài liệu trực tiếp từ máy (PDF, Word, Ảnh...)</label>
+                <input type="file" id="lecFileInput" class="w-full p-1.5 border rounded text-xs bg-gray-50">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Mô tả</label>
+                <textarea id="lecDesc" rows="2" class="w-full p-2 border rounded"></textarea>
+              </div>
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeModal('modalLec')" class="px-3 py-1.5 border rounded">Hủy</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded font-medium">Đăng Bài</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- MODAL TẠO ĐỀ THI (GIÁO VIÊN TỰ NHẬP HÀNG ĐÁP ÁN GỐC) -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra (Tích hợp AI Quét Đáp Án)</h3>
+            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra (Tự Nhập Hàng Đáp Án)</h3>
             <form id="formAddExam" class="space-y-3 text-sm">
               <div>
                 <label class="block text-xs font-semibold mb-1">Tên bài kiểm tra</label>
                 <input type="text" id="examTitle" required class="w-full p-2 border rounded">
               </div>
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-3 gap-2">
                 <div>
                   <label class="block text-xs font-semibold mb-1">Thời gian (phút)</label>
-                  <input type="number" id="examDuration" value="45" required class="w-full p-2 border rounded">
+                  <input type="number" id="examDuration" value="45" required class="w-full p-2 border rounded text-xs">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold mb-1">Số câu trắc nghiệm</label>
-                  <input type="number" id="mcqCount" value="12" class="w-full p-1.5 border rounded text-xs">
+                  <label class="block text-xs font-semibold mb-1">Số câu TN</label>
+                  <input type="number" id="mcqCount" value="12" class="w-full p-2 border rounded text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Số câu TL ngắn</label>
+                  <input type="number" id="saCount" value="4" class="w-full p-2 border rounded text-xs">
                 </div>
               </div>
 
@@ -434,24 +482,15 @@
                 <input type="file" id="examFileInput" required accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-gray-50">
               </div>
 
-              <!-- NÚT AI TỰ ĐỘNG ĐỌC ĐỀ VÀ ĐIỀN ĐÁP ÁN -->
-              <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 flex justify-between items-center">
-                <div>
-                  <span class="font-bold text-xs text-purple-900 block"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Tự động hóa bằng AI:</span>
-                  <span class="text-[11px] text-purple-700">AI tự động quét bảng đáp án từ file đề của bạn.</span>
-                </div>
-                <button type="button" onclick="aiAutoDetectKey()" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-purple-700 shrink-0">🤖 AI Đọc Đáp Án</button>
-              </div>
-
               <div class="border p-3 rounded bg-gray-50 space-y-2">
-                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Đáp án gốc (Có thể tự chỉnh sửa):</span>
+                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Thầy/Cô tự nhập hàng đáp án gốc:</span>
                 <div>
-                  <label class="block text-[10px] font-semibold">Đáp án trắc nghiệm (A,B,C,D...)</label>
-                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B..." class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[10px] font-semibold text-blue-800">Đáp án Trắc nghiệm (Nhập cách nhau bởi dấu phẩy, ví dụ: A,B,C,D,A,B...)</label>
+                  <input type="text" id="mcqKey" required placeholder="A,B,C,D,A,B,C,D,A,B,C,D" class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold">Đáp án trả lời ngắn</label>
-                  <input type="text" id="saKey" placeholder="12, -5, 3.5..." class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[10px] font-semibold text-indigo-800">Đáp án Trả lời ngắn (Nhập cách nhau bởi dấu phẩy, ví dụ: 12,-5,3.5,0)</label>
+                  <input type="text" id="saKey" placeholder="12, -5, 3.5, 0" class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
               </div>
 
@@ -475,6 +514,38 @@
         };
       }
 
+      if (document.getElementById('formAddLec')) {
+        document.getElementById('formAddLec').onsubmit = (e) => {
+          e.preventDefault();
+          const fileInput = document.getElementById('lecFileInput');
+          if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+              const newLec = {
+                title: document.getElementById('lecTitle').value,
+                subject: document.getElementById('lecSubject').value,
+                chapter: document.getElementById('lecChapter').value,
+                fileUrl: uploadEvent.target.result,
+                fileName: file.name,
+                description: document.getElementById('lecDesc').value,
+                instructor: 'Hai Ton',
+                date: new Date().toISOString().split('T')[0]
+              };
+              db.ref('lectures').push(newLec, err => {
+                if (!err) {
+                  alert('Đăng bài giảng thành công!');
+                  closeModal('modalLec');
+                }
+              });
+            };
+            reader.readAsDataURL(file);
+          } else {
+            alert('Vui lòng chọn tệp tài liệu!');
+          }
+        };
+      }
+
       if (document.getElementById('formAddExam')) {
         document.getElementById('formAddExam').onsubmit = (e) => {
           e.preventDefault();
@@ -488,7 +559,7 @@
                 duration: Number(document.getElementById('examDuration').value),
                 fileUrl: uploadEvent.target.result,
                 mcqCount: Number(document.getElementById('mcqCount').value),
-                saCount: 4,
+                saCount: Number(document.getElementById('saCount').value),
                 mcqKey: document.getElementById('mcqKey').value,
                 saKey: document.getElementById('saKey').value
               };
@@ -503,16 +574,6 @@
           }
         };
       }
-    }
-
-    async function aiAutoDetectKey() {
-      const count = Number(document.getElementById('mcqCount').value) || 12;
-      const sampleKeys = ['A', 'B', 'C', 'D', 'A', 'C', 'B', 'D', 'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D'];
-      let generatedKey = sampleKeys.slice(0, count).join(',');
-
-      document.getElementById('mcqKey').value = generatedKey;
-      document.getElementById('saKey').value = "12, -5, 3.5, 0";
-      alert('🤖 AI đã phân tích file đề và tự động điền bộ đáp án gốc thành công!');
     }
 
     function selectMCQ(qNum, val) { myAppState.userAnswers.mcq[qNum] = val; renderUI(); }
