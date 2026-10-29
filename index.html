@@ -219,7 +219,7 @@
         mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (3 Dạng: TN, Đúng/Sai, Trả lời ngắn)</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (3 Phần Chuẩn)</button>` : ''}
           </div>
           ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,7 +227,7 @@
                 <div class="bg-white p-4 rounded shadow border flex justify-between items-center">
                   <div>
                     <h3 class="font-bold text-blue-700">${e.title}</h3>
-                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} TN - ${e.tfCount || 0} Đúng/Sai - ${e.saCount || 0} Ngắn</p>
+                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} TN - ${e.tfCount || 0} Đ/S - ${e.saCount || 0} Ngắn</p>
                   </div>
                   <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
                 </div>
@@ -255,12 +255,30 @@
 
             ${myAppState.resultObj ? `
               <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                <div class="text-center bg-blue-50 p-6 rounded-xl border border-blue-100 max-w-xl mx-auto">
-                  <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
-                  <p class="text-gray-700 text-sm mb-4">Bạn trả lời đúng ${myAppState.resultObj.correctCount} phần câu hỏi.</p>
-                  <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 text-sm">Quay lại danh sách đề thi</button>
+                <!-- KHUNG ĐIỂM SỐ VÀ AI NHẬN XÉT / LỜI CHÚC -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200 max-w-2xl mx-auto shadow-sm space-y-4">
+                  <div class="text-center">
+                    <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
+                    <p class="text-gray-700 text-sm">Bạn trả lời đúng ${myAppState.resultObj.correctCount} / ${myAppState.resultObj.totalQuestions} phần câu hỏi.</p>
+                  </div>
+
+                  <!-- PHẦN AI NHẬN XÉT & CẦN CỐ GẮNG -->
+                  <div class="bg-white p-4 rounded-xl border border-blue-100 text-xs space-y-2">
+                    <div class="font-bold text-blue-800 flex items-center gap-1.5 text-sm">
+                      <i class="fa-solid fa-robot text-blue-600"></i> AI Nhận xét & Đánh giá năng lực:
+                    </div>
+                    <p class="text-gray-700 leading-relaxed italic">${myAppState.resultObj.aiComment}</p>
+                    <div class="pt-2 border-t text-indigo-700 font-semibold flex items-center gap-1.5">
+                      <i class="fa-solid fa-heart text-red-500"></i> Lời chúc từ hệ thống: "${myAppState.resultObj.aiWish}"
+                    </div>
+                  </div>
+
+                  <div class="text-center pt-2">
+                    <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 text-sm shadow">Quay lại danh sách đề thi</button>
+                  </div>
                 </div>
 
+                <!-- BẢNG TRA CỨU ĐÁP ÁN CHI TIẾT -->
                 <div class="max-w-3xl mx-auto space-y-4">
                   <h3 class="font-bold text-base text-gray-800 border-b pb-2"><i class="fa-solid fa-key mr-2"></i>Bảng tra cứu đáp án chi tiết:</h3>
                   
@@ -501,7 +519,7 @@
           </div>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI (3 DẠNG: TN, ĐÚNG/SAI, TRẢ LỜI NGẮN) -->
+        <!-- MODAL TẠO ĐỀ THI (3 PHẦN CHUẨN: TN, ĐÚNG/SAI, NGẮN) -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra (3 Phần Chuẩn)</h3>
@@ -538,10 +556,10 @@
                 <span class="font-bold text-xs text-gray-700 block border-b pb-1">Nhập đáp án gốc chuẩn:</span>
                 <div>
                   <label class="block text-[10px] font-semibold text-blue-800">1. Đáp án Trắc nghiệm (Ví dụ: A,B,C,D,A,B...)</label>
-                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B..." class="w-full p-2 border rounded text-xs bg-white font-mono">
+                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B,C,D,A,B,C,D" class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold text-amber-800">2. Đáp án Đúng/Sai (Nhập dạng Đ/S cho các ý a,b,c,d mỗi câu, cách nhau bởi phẩy. Ví dụ: Đ,S,Đ,S, S,Đ,Đ,S...)</label>
+                  <label class="block text-[10px] font-semibold text-amber-800">2. Đáp án Đúng/Sai (Nhập Đ/S các ý a,b,c,d cách nhau bởi phẩy. Ví dụ: Đ,S,Đ,S, S,Đ,Đ,S...)</label>
                   <input type="text" id="tfKey" placeholder="Đ,S,Đ,S, Đ,Đ,S,S..." class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
                 <div>
@@ -610,7 +628,6 @@
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function(uploadEvent) {
-              // Chuyển chuỗi Đúng/Sai thành mảng cấu trúc cho từng câu (mỗi câu 4 ý a,b,c,d)
               const rawTf = document.getElementById('tfKey').value.split(',').map(s => s.trim().toUpperCase());
               let tfKeys = [];
               let idx = 0;
@@ -707,7 +724,7 @@
         }
       }
 
-      // 2. Chấm Đúng / Sai (mỗi ý a,b,c,d là 1 điểm thành phần)
+      // 2. Chấm Đúng / Sai
       for (let i = 1; i <= (exam.tfCount || 0); i++) {
         ['a', 'b', 'c', 'd'].forEach(sub => {
           const uVal = myAppState.userAnswers.tf[`${i}_${sub}`];
@@ -728,6 +745,23 @@
 
       const finalScore = totalItems > 0 ? Number(((totalCorrect / totalItems) * 10).toFixed(1)) : 10;
 
+      // AI Nhận xét & Lời chúc dựa trên điểm số
+      let aiComment = "";
+      let aiWish = "";
+      if (finalScore >= 9) {
+        aiComment = "Tuyệt vời! Kiến thức của bạn rất vững chắc, tư duy logic nhạy bén và xử lý các dạng bài rất chính xác. Hãy tiếp tục giữ vững phong độ đỉnh cao này nhé!";
+        aiWish = "Chúc bạn luôn giữ mãi ngọn lửa đam mê học tập và gặt hái thật nhiều thành tích rực rỡ trong các kỳ thi sắp tới!";
+      } else if (finalScore >= 7) {
+        aiComment = "Kết quả rất tốt! Bạn đã nắm vững phần lớn kiến thức trọng tâm. Tuy nhiên, hãy chú ý rà soát lại một số câu còn nhầm lẫn để đạt điểm tuyệt đối ở lần sau.";
+        aiWish = "Chúc bạn ngày càng tiến bộ, tự tin vững vàng và luôn tràn đầy năng lượng trên con đường chinh phục tri thức!";
+      } else if (finalScore >= 5) {
+        aiComment = "Đạt yêu cầu cơ bản! Bạn đã hiểu bài ở mức độ nền tảng, tuy nhiên cần luyện tập thêm nhiều dạng bài tập nâng cao và cẩn thận hơn trong các bước tính toán.";
+        aiWish = "Chúc bạn luôn kiên trì, nỗ lực hết mình và đạt kết quả cao hơn nữa trong những bài kiểm tra tiếp theo!";
+      } else {
+        aiComment = "Cần cố gắng nhiều hơn nữa nhé! Bạn hãy ôn tập lại thật kỹ lý thuyết sách giáo khoa, làm lại các bài tập ví dụ và nhờ thầy cô hoặc trợ giảng AI hỗ trợ ngay những phần chưa hiểu rõ.";
+        aiWish = "Chúc bạn luôn giữ vững tinh thần lạc quan, quyết tâm lội ngược dòng thành công trong các kỳ thi quan trọng!";
+      }
+
       const subData = {
         examTitle: exam.title,
         studentName: myAppState.currentUser.username,
@@ -736,7 +770,7 @@
       };
 
       db.ref('submissions').push(subData);
-      myAppState.resultObj = { finalScore, correctCount: totalCorrect, totalQuestions: totalItems };
+      myAppState.resultObj = { finalScore, correctCount: totalCorrect, totalQuestions: totalItems, aiComment, aiWish };
       renderUI();
     }
 
