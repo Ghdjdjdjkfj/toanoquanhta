@@ -3,13 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tài Liệu Ôn Tập THCS & THPT - Toán 9 (KNTT)</title>
+  <title>Tài Liệu Ôn Tập & Kiểm Tra Online - Toán 9</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <style>
+    /* Ngăn chọn văn bản trên khung làm bài */
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
@@ -21,17 +30,17 @@
       <div class="bg-blue-600 text-white p-3 flex justify-between items-center">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-robot text-lg"></i>
-          <span class="font-bold text-sm">Trợ Giảng AI - Toán 9 KNTT</span>
+          <span class="font-bold text-sm">Trợ Giảng AI - Toán 9</span>
         </div>
         <button onclick="toggleAIChat()" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div id="aiChatMessages" class="flex-1 p-3 overflow-y-auto space-y-3 text-xs bg-gray-50">
         <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%]">
-          Xin chào! Mình là trợ giảng AI Toán 9 Kết nối tri thức. Bạn cần mình giải thích lý thuyết hay hướng dẫn bài tập chương nào không?
+          Xin chào! Mình là trợ giảng AI. Bạn có thắc mắc gì về bài tập hoặc lý thuyết cần hỗ trợ không?
         </div>
       </div>
       <div class="p-2.5 bg-white border-t flex gap-2">
-        <input type="text" id="aiChatInput" placeholder="Nhập câu hỏi toán học..." class="flex-1 p-2 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter') sendAIMessage()">
+        <input type="text" id="aiChatInput" placeholder="Nhập câu hỏi toán..." class="flex-1 p-2 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-blue-500" onkeydown="if(event.key==='Enter') sendAIMessage()">
         <button onclick="sendAIMessage()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-blue-700"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
     </div>
@@ -80,39 +89,6 @@
       'Đề chính thức Sở GD-ĐT Gia Lai (26-27)'
     ];
 
-    const sampleQuestionBank = {
-      "Chương I: Phương trình và hệ phương trình bậc nhất hai ẩn": [
-        { questionText: "Cặp số nào sau đây là nghiệm của phương trình 2x - y = 3?", options: ["(2; 1)", "(1; 2)", "(0; -3)", "(-1; 1)"], correctAnswer: 0 }
-      ],
-      "Chương II: Phương trình và bất phương trình bậc nhất một ẩn": [
-        { questionText: "Điều kiện xác định của phương trình $\\frac{1}{x-2} + 3 = 0$ là:", options: ["x ≠ 2", "x ≠ -2", "x > 2", "x ≥ 2"], correctAnswer: 0 }
-      ],
-      "Chương III: Căn bậc hai và căn bậc ba": [
-        { questionText: "Căn bậc hai số học của 16 là:", options: ["4", "-4", "±4", "8"], correctAnswer: 0 }
-      ],
-      "Chương IV: Hệ thức lượng trong tam giác vuông": [
-        { questionText: "Cho tam giác ABC vuông tại A có đường cao AH. Hệ thức nào sau đây đúng?", options: ["AH² = BH.CH", "AB² = BH.BC", "AC² = CH.BC", "Cả 3 đáp án trên"], correctAnswer: 3 }
-      ],
-      "Chương V: Đường tròn": [
-        { questionText: "Tâm đường tròn ngoại tiếp tam giác vuông là:", options: ["Trọng tâm tam giác", "Trung điểm của cạnh huyền", "Giao điểm ba đường cao", "Giao điểm ba đường phân giác"], correctAnswer: 1 }
-      ],
-      "Chương VI: Hàm số y=ax² (a≠0) và phương trình bậc hai một ẩn": [
-        { questionText: "Hàm số y = -2x² có đồ thị là:", options: ["Parabol quay bề lõm lên trên", "Parabol quay bề lõm xuống dưới", "Đường thẳng đi qua gốc tọa độ", "Một nhánh parabol"], correctAnswer: 1 }
-      ],
-      "Chương VII: Tần số và tần số tương đối": [
-        { questionText: "Tần số tương đối của một giá trị được tính bằng tỉ số giữa:", options: ["Tần số và tổng số lần quan sát", "Tổng số lần quan sát và tần số", "Tần số với mốt", "Giá trị lớn nhất và nhỏ nhất"], correctAnswer: 0 }
-      ],
-      "Chương VIII: Xác suất của biến cố trong một số mô hình xác suất đơn giản": [
-        { questionText: "Gieo một con xúc xắc cân đối và đồng chất. Xác suất xuất hiện mặt số chấm là số nguyên tố là:", options: ["1/2", "1/3", "1/6", "2/3"], correctAnswer: 0 }
-      ],
-      "Chương IX: Đường tròn ngoại tiếp và đường tròn nội tiếp": [
-        { questionText: "Đường tròn đi qua tất cả các đỉnh của một đa giác gọi là:", options: ["Đường tròn nội tiếp", "Đường tròn ngoại tiếp", "Đường tròn bàng tiếp", "Đường tròn tâm nội"], correctAnswer: 1 }
-      ],
-      "Chương X: Một số hình khối trong thực tiễn": [
-        { questionText: "Thể tích của hình nón có bán kính đáy r và chiều cao h tính theo công thức:", options: ["V = πr²h", "V = 1/3 πr²h", "V = 4/3 πr³", "V = 2πrh"], correctAnswer: 1 }
-      ]
-    };
-
     let myAppState = {
       currentUser: null,
       view: 'home',
@@ -122,9 +98,8 @@
       exams: [],
       students: [],
       submissions: [],
-      parsedQuestions: [],
       activeExam: null,
-      answersMap: {},
+      userAnswers: { mcq: {}, tf: {}, sa: {} },
       timeRemaining: 0,
       resultObj: null,
       timerRef: null
@@ -161,7 +136,7 @@
           <div class="min-h-screen bg-blue-600 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
               <h1 class="text-2xl font-bold text-center mb-1 text-gray-800">Tài Liệu Ôn Tập THCS & THPT</h1>
-              <p class="text-center text-sm text-gray-500 mb-6">Facebook: Hai Ton</p>
+              <p class="text-center text-sm text-gray-500 mb-6">Hệ thống thi online chuẩn mới</p>
               <form id="loginForm" class="space-y-4">
                 <div>
                   <label class="block text-xs font-semibold mb-1">Tên đăng nhập</label>
@@ -223,7 +198,7 @@
           </div>
 
           <div class="bg-white p-3 rounded border mb-6 space-y-2">
-            <span class="font-bold text-xs text-blue-700 uppercase tracking-wide block border-b pb-1"><i class="fa-solid fa-list-ul mr-1"></i> Danh mục bài học & chủ đề (${myAppState.selectedSubject}):</span>
+            <span class="font-bold text-xs text-blue-700 uppercase tracking-wide block border-b pb-1"><i class="fa-solid fa-list-ul mr-1"></i> Danh mục bài học (${myAppState.selectedSubject}):</span>
             <div class="flex flex-wrap gap-1.5 pt-1">
               ${chaptersListToan9.map(c => `<button onclick="pickChapter('${c.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded text-xs font-medium transition ${myAppState.selectedChapter === c ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">${c}</button>`).join('')}
             </div>
@@ -242,7 +217,6 @@
                   </div>
                   <div class="mt-4 flex gap-2">
                     ${l.fileUrl ? `<a href="${l.fileUrl}" download="${l.fileName || 'TaiLieu'}" class="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-semibold text-center hover:bg-blue-700"><i class="fa-solid fa-download mr-1"></i> Tải tài liệu</a>` : ''}
-                    <button onclick="alert('Đang mở bài giảng!')" class="flex-1 bg-indigo-600 text-white py-1.5 rounded text-xs font-semibold hover:bg-indigo-700">Vào học</button>
                   </div>
                 </div>
               `).join('')}
@@ -255,17 +229,17 @@
         mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Từ LaTeX</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (File Đề + Phiếu Đáp Án)</button>` : ''}
           </div>
           ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               ${myAppState.exams.map(e => `
                 <div class="bg-white p-4 rounded shadow border flex justify-between items-center">
                   <div>
-                    <h3 class="font-bold">${e.title}</h3>
-                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.questions ? e.questions.length : 0} câu hỏi</p>
+                    <h3 class="font-bold text-blue-700">${e.title}</h3>
+                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} Trắc nghiệm - ${e.tfCount || 0} Đúng/Sai - ${e.saCount || 0} Trả lời ngắn</p>
                   </div>
-                  <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700">Làm bài</button>
+                  <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
                 </div>
               `).join('')}
             </div>
@@ -273,42 +247,108 @@
         `;
       }
 
+      // GIAO DIỆN LÀM BÀI CHIA ĐÔI MÀN HÌNH (LƯỚT FILE ĐỀ + TÔ ĐÁP ÁN 3 DẠNG)
       else if (myAppState.view === 'do_exam' && myAppState.activeExam) {
         const exam = myAppState.activeExam;
         const mm = Math.floor(myAppState.timeRemaining / 60);
         const ss = myAppState.timeRemaining % 60;
 
         mainArea = `
-          <div class="bg-white p-6 rounded shadow max-w-3xl mx-auto">
-            <div class="flex justify-between items-center border-b pb-4 mb-6 sticky top-14 bg-white z-20">
-              <h2 class="text-xl font-bold">${exam.title}</h2>
-              <div class="bg-red-100 text-red-700 font-bold px-4 py-2 rounded-lg text-sm">
+          <div class="bg-white rounded shadow-lg overflow-hidden flex flex-col h-[calc(100vh-100px)]">
+            <!-- Thanh thông tin bài thi -->
+            <div class="bg-blue-600 text-white p-3 flex justify-between items-center shrink-0">
+              <h2 class="font-bold text-base truncate"><i class="fa-solid fa-file-signature mr-2"></i>${exam.title}</h2>
+              <div class="bg-red-500 text-white font-bold px-3 py-1 rounded text-sm shadow animate-pulse">
                 <i class="fa-solid fa-clock mr-1"></i> ${mm}:${ss.toString().padStart(2, '0')}
               </div>
             </div>
 
             ${myAppState.resultObj ? `
-              <div class="text-center py-8">
-                <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} điểm</div>
-                <p class="text-gray-600 mb-6">Bạn đã trả lời đúng ${myAppState.resultObj.score} / ${myAppState.resultObj.total} câu hỏi. Điểm số đã được ghi nhận!</p>
-                <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold">Quay lại danh sách đề thi</button>
+              <div class="text-center py-12 px-4 flex-1 overflow-y-auto">
+                <div class="text-6xl font-bold text-blue-600 mb-3">${myAppState.resultObj.finalScore} <span class="text-2xl text-gray-500">/ 10 điểm</span></div>
+                <p class="text-gray-700 font-medium mb-6">Đã nộp bài thành công! Điểm số của bạn đã được ghi nhận vào hệ thống.</p>
+                <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700">Quay lại danh sách đề thi</button>
               </div>
             ` : `
-              <div class="space-y-6">
-                ${exam.questions.map((q, qIdx) => `
-                  <div class="bg-gray-50 p-4 rounded-xl border">
-                    <p class="font-semibold text-gray-800 mb-3">Câu ${qIdx + 1}: ${q.questionText}</p>
-                    <div class="space-y-2">
-                      ${q.options.map((opt, optIdx) => `
-                        <label class="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition ${myAppState.answersMap[qIdx] === optIdx ? 'bg-blue-100 border-blue-500' : 'bg-white hover:bg-gray-100'}">
-                          <input type="radio" name="q_${qIdx}" ${myAppState.answersMap[qIdx] === optIdx ? 'checked' : ''} onclick="recordAnswer(${qIdx}, ${optIdx})">
-                          <span class="text-sm"><b>${['A', 'B', 'C', 'D'][optIdx]}.</b> ${opt}</span>
-                        </label>
-                      `).join('')}
-                    </div>
+              <!-- CHIA ĐÔI MÀN HÌNH: FILE ĐỀ BÊN TRÁI - TÔ ĐÁP ÁN BÊN PHẢI -->
+              <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                
+                <!-- KHUNG XEM FILE ĐỀ (KHÔNG CHO TẢI/COPY) -->
+                <div class="w-full md:w-1/2 bg-gray-200 border-r flex flex-col h-1/2 md:h-full relative no-select" oncontextmenu="return false;">
+                  <div class="bg-gray-700 text-white text-xs px-3 py-1.5 flex justify-between items-center">
+                    <span><i class="fa-solid fa-eye mr-1"></i> Khung xem đề thi (Chỉ xem)</span>
+                    <span class="text-[10px] bg-red-600 px-1.5 py-0.5 rounded">Bảo mật đề</span>
                   </div>
-                `).join('')}
-                <button onclick="finishExam()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow hover:bg-green-700">Nộp Bài Thi & Chấm Điểm</button>
+                  ${exam.fileUrl ? `
+                    <iframe src="${exam.fileUrl}#toolbar=0&navpanes=0&scrollbar=1" class="w-full h-full border-none"></iframe>
+                  ` : `<div class="p-8 text-center text-gray-500">Không có file đề đính kèm.</div>`}
+                </div>
+
+                <!-- KHUNG PHIẾU TÔ ĐÁP ÁN (3 DẠNG) BÊN PHẢI -->
+                <div class="w-full md:w-1/2 p-4 overflow-y-auto h-1/2 md:h-full bg-white space-y-6">
+                  <h3 class="font-bold text-lg text-blue-800 border-b pb-2"><i class="fa-solid fa-list-check mr-2"></i>PHIẾU TẢI / TÔ ĐÁP ÁN</h3>
+
+                  <!-- DẠNG 1: TRẮC NGHIỆM 4 LỰA CHỌN -->
+                  ${(exam.mcqCount > 0) ? `
+                    <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                      <h4 class="font-bold text-sm text-blue-900 mb-3">PHẦN I. Câu hỏi trắc nghiệm (4 lựa chọn)</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${Array.from({length: exam.mcqCount}).map((_, i) => `
+                          <div class="flex items-center justify-between bg-white p-2 rounded border text-xs">
+                            <span class="font-bold text-gray-700 w-12">Câu ${i+1}:</span>
+                            <div class="flex gap-2">
+                              ${['A','B','C','D'].map(opt => `
+                                <button type="button" onclick="selectMCQ(${i+1}, '${opt}')" class="w-7 h-7 rounded-full font-bold border transition ${myAppState.userAnswers.mcq[i+1] === opt ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-gray-50 text-gray-700 hover:bg-gray-200'}">${opt}</button>
+                              `).join('')}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- DẠNG 2: TRẮC NGHIỆM ĐÚNG / SAI -->
+                  ${(exam.tfCount > 0) ? `
+                    <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+                      <h4 class="font-bold text-sm text-amber-900 mb-3">PHẦN II. Câu hỏi trắc nghiệm Đúng / Sai</h4>
+                      <div class="space-y-3">
+                        ${Array.from({length: exam.tfCount}).map((_, i) => `
+                          <div class="bg-white p-2.5 rounded border text-xs">
+                            <div class="font-bold text-amber-800 mb-1">Câu ${i+1}:</div>
+                            <div class="grid grid-cols-2 gap-2">
+                              ${['a','b','c','d'].map(sub => `
+                                <div class="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                                  <span class="font-semibold text-gray-600">${sub})</span>
+                                  <div class="flex gap-1">
+                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'Đ')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'Đ' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}">Đúng</button>
+                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'S')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'S' ? 'bg-red-600 text-white' : 'bg-white text-gray-700'}">Sai</button>
+                                  </div>
+                                </div>
+                              `).join('')}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- DẠNG 3: CÂU HỎI TRẢ LỜI NGẮN -->
+                  ${(exam.saCount > 0) ? `
+                    <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                      <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN III. Câu hỏi trả lời ngắn</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${Array.from({length: exam.saCount}).map((_, i) => `
+                          <div class="bg-white p-2.5 rounded border text-xs flex items-center gap-2">
+                            <span class="font-bold text-indigo-800 shrink-0">Câu ${i+1}:</span>
+                            <input type="text" placeholder="Nhập đáp án..." oninput="inputSA(${i+1}, this.value)" value="${myAppState.userAnswers.sa[i+1] || ''}" class="w-full p-1.5 border rounded outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <button onclick="finishExam()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-green-700 transition"><i class="fa-solid fa-paper-plane mr-2"></i>NỘP BÀI THI</button>
+                </div>
               </div>
             `}
           </div>
@@ -321,7 +361,7 @@
             <h2 class="text-xl font-bold mb-4">Thống Kê Điểm Số Học Sinh</h2>
             ${myAppState.submissions.length === 0 ? `<p class="text-gray-500 text-center py-6">Chưa có dữ liệu bài nộp.</p>` : `
               <table class="w-full text-left text-sm border-collapse">
-                <thead><tr class="bg-gray-100 border-b"><th class="p-2">Học sinh</th><th class="p-2">Bài thi</th><th class="p-2">Điểm</th><th class="p-2">Thời gian</th></tr></thead>
+                <thead><tr class="bg-gray-100 border-b"><th class="p-2">Học sinh</th><th class="p-2">Bài thi</th><th class="p-2">Điểm số</th><th class="p-2">Thời gian nộp</th></tr></thead>
                 <tbody>
                   ${myAppState.submissions.map(s => `<tr class="border-b"><td class="p-2 font-semibold">${s.studentName}</td><td class="p-2">${s.examTitle}</td><td class="p-2 font-bold text-blue-600">${s.score}</td><td class="p-2 text-xs text-gray-500">${s.date}</td></tr>`).join('')}
                 </tbody>
@@ -363,90 +403,61 @@
             </div>
           </header>
 
-          <main class="max-w-6xl w-full mx-auto p-6 flex-1">
+          <main class="max-w-6xl w-full mx-auto p-4 flex-1">
             ${mainArea}
           </main>
         </div>
 
-        <!-- MODAL ĐĂNG BÀI GIẢNG -->
-        <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg">Đăng Bài Giảng Mới</h3>
-            <form id="formAddLec" class="space-y-3 text-sm">
-              <div>
-                <label class="block text-xs font-semibold mb-1">Tên bài học</label>
-                <input type="text" id="lecTitle" required class="w-full p-2 border rounded">
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-xs font-semibold mb-1">Môn học</label>
-                  <select id="lecSubject" class="w-full p-2 border rounded bg-white">
-                    <option value="Toán 9">Toán 9</option>
-                    <option value="Toán 8">Toán 8</option>
-                    <option value="Toán 7">Toán 7</option>
-                    <option value="Đại số 10">Đại số 10</option>
-                    <option value="Hình học 11">Hình học 11</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-semibold mb-1">Chương / Mục</label>
-                  <select id="lecChapter" class="w-full p-2 border rounded bg-white">
-                    ${chaptersListToan9.filter(c => c !== 'Tất cả').map(c => `<option value="${c}">${c}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold mb-1">Link Video MP4</label>
-                <input type="url" id="lecVideo" placeholder="https://..." class="w-full p-2 border rounded">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold mb-1">Chọn tệp tài liệu trực tiếp từ máy (PDF, Word, Ảnh...)</label>
-                <input type="file" id="lecFileInput" class="w-full p-1.5 border rounded text-xs bg-gray-50 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold mb-1">Mô tả</label>
-                <textarea id="lecDesc" rows="2" class="w-full p-2 border rounded"></textarea>
-              </div>
-              <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeModal('modalLec')" class="px-3 py-1.5 border rounded">Hủy</button>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded font-medium">Đăng Bài</button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- MODAL TẠO ĐỀ THI TỪ LATEX & NGÂN HÀNG CÂU HỎI -->
+        <!-- MODAL TẠO ĐỀ THI VỚI FILE ĐỀ + ĐÁP ÁN CHUẨN 3 DẠNG -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded p-6 max-w-xl w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg">Tạo Đề Kiểm Tra Từ LaTeX & Ngân Hàng KNTT</h3>
+          <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra Mới (File Đề + Đáp Án)</h3>
             <form id="formAddExam" class="space-y-3 text-sm">
               <div>
-                <label class="block text-xs font-semibold mb-1">Tiêu đề bài kiểm tra</label>
+                <label class="block text-xs font-semibold mb-1">Tên bài kiểm tra</label>
                 <input type="text" id="examTitle" required class="w-full p-2 border rounded">
               </div>
               <div>
                 <label class="block text-xs font-semibold mb-1">Thời gian làm bài (phút)</label>
-                <input type="number" id="examDuration" value="15" required class="w-full p-2 border rounded">
+                <input type="number" id="examDuration" value="45" required class="w-full p-2 border rounded">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Chọn tệp đề thi từ máy (PDF / Ảnh)</label>
+                <input type="file" id="examFileInput" required accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-gray-50">
               </div>
 
-              <!-- CHỌN NHANH TỪ NGÂN HÀNG KNTT 10 CHƯƠNG -->
-              <div class="bg-indigo-50 p-3 rounded border border-indigo-200">
-                <label class="block text-xs font-bold text-indigo-900 mb-1"><i class="fa-solid fa-database mr-1"></i> Lấy câu hỏi từ Ngân hàng 10 Chương KNTT:</label>
-                <select id="bankChapterSelect" class="w-full p-2 border rounded bg-white text-xs mb-2">
-                  ${chaptersListToan9.filter(c => sampleQuestionBank[c]).map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
-                <button type="button" onclick="loadBankQuestions()" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-indigo-700">Nạp câu hỏi theo Chương</button>
+              <!-- CẤU HÌNH SỐ LƯỢNG CÂU HỎI VÀ ĐÁP ÁN CHUẨN -->
+              <div class="border p-3 rounded bg-gray-50 space-y-2">
+                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Cấu hình cấu trúc câu hỏi:</span>
+                
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-semibold">Số câu TN 4 Lựa chọn</label>
+                    <input type="number" id="mcqCount" value="12" class="w-full p-1.5 border rounded text-xs">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold">Số câu Đúng/Sai</label>
+                    <input type="number" id="tfCount" value="4" class="w-full p-1.5 border rounded text-xs">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-semibold">Số câu Trả lời ngắn</label>
+                    <input type="number" id="saCount" value="6" class="w-full p-1.5 border rounded text-xs">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-semibold mt-2">Đáp án chuẩn Trắc nghiệm 4 lựa chọn (Ví dụ: 1A,2B,3C...)</label>
+                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B..." class="w-full p-1.5 border rounded text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold">Đáp án chuẩn Trả lời ngắn (phân cách bằng dấu phẩy)</label>
+                  <input type="text" id="saKey" placeholder="12, -5, 3.5..." class="w-full p-1.5 border rounded text-xs">
+                </div>
               </div>
 
-              <div class="bg-yellow-50 p-3 rounded border border-yellow-200">
-                <label class="block text-xs font-bold text-yellow-800 mb-1">Hoặc dán mã LaTeX (Hỗ trợ cả \\begin{ex}, \\begin{equation}, MathType):</label>
-                <textarea id="latexText" rows="4" class="w-full p-2 border rounded text-xs font-mono bg-white" placeholder="Dán mã LaTeX có chứa công thức hoặc câu hỏi trắc nghiệm..."></textarea>
-                <button type="button" onclick="parseLatexCode()" class="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold">Bóc tách câu hỏi thông minh</button>
-              </div>
-              <p class="text-xs text-gray-600 font-semibold" id="latexStatus">Sẵn sàng nhận diện câu hỏi.</p>
               <div class="flex justify-end gap-2 pt-2 border-t">
                 <button type="button" onclick="closeModal('modalExam')" class="px-3 py-1.5 border rounded">Hủy</button>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded font-medium">Lưu Đề Thi</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded font-medium hover:bg-blue-700">Lưu Đề Thi</button>
               </div>
             </form>
           </div>
@@ -464,74 +475,50 @@
         };
       }
 
-      if (document.getElementById('formAddLec')) {
-        document.getElementById('formAddLec').onsubmit = (e) => {
+      if (document.getElementById('formAddExam')) {
+        document.getElementById('formAddExam').onsubmit = (e) => {
           e.preventDefault();
-          const fileInput = document.getElementById('lecFileInput');
-
+          const fileInput = document.getElementById('examFileInput');
           if (fileInput.files && fileInput.files[0]) {
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function(uploadEvent) {
-              saveLectureData(uploadEvent.target.result, file.name);
+              const newExam = {
+                title: document.getElementById('examTitle').value,
+                duration: Number(document.getElementById('examDuration').value),
+                fileUrl: uploadEvent.target.result,
+                mcqCount: Number(document.getElementById('mcqCount').value),
+                tfCount: Number(document.getElementById('tfCount').value),
+                saCount: Number(document.getElementById('saCount').value),
+                mcqKey: document.getElementById('mcqKey').value,
+                saKey: document.getElementById('saKey').value
+              };
+              db.ref('exams').push(newExam, err => {
+                if (!err) {
+                  alert('Tạo đề kiểm tra thành công!');
+                  closeModal('modalExam');
+                }
+              });
             };
             reader.readAsDataURL(file);
-          } else {
-            alert('Vui lòng chọn một tệp tài liệu từ máy tính!');
           }
         };
       }
-
-      if (document.getElementById('formAddExam')) {
-        document.getElementById('formAddExam').onsubmit = (e) => {
-          e.preventDefault();
-          const newExam = {
-            title: document.getElementById('examTitle').value,
-            duration: Number(document.getElementById('examDuration').value),
-            questions: myAppState.parsedQuestions.length > 0 ? myAppState.parsedQuestions : [{ questionText: 'Câu hỏi mẫu KNTT', options: ['A','B','C','D'], correctAnswer: 0 }]
-          };
-          db.ref('exams').push(newExam, err => {
-            if (!err) {
-              alert('Tạo đề kiểm tra thành công!');
-              closeModal('modalExam');
-              myAppState.parsedQuestions = [];
-            }
-          });
-        };
-      }
     }
 
-    function loadBankQuestions() {
-      const selectedChap = document.getElementById('bankChapterSelect').value;
-      if (sampleQuestionBank[selectedChap]) {
-        myAppState.parsedQuestions = sampleQuestionBank[selectedChap];
-        document.getElementById('latexStatus').innerText = `Đã nạp sẵn ${myAppState.parsedQuestions.length} câu hỏi từ ${selectedChap}!`;
-        alert(`Đã nạp thành công câu hỏi từ ${selectedChap}!`);
-      } else {
-        alert('Chưa có câu hỏi mẫu cho chương này.');
-      }
+    // CÁC HÀM XỬ LÝ CHỌN ĐÁP ÁN CỦA HỌC SINH
+    function selectMCQ(qNum, val) {
+      myAppState.userAnswers.mcq[qNum] = val;
+      renderUI();
     }
 
-    function saveLectureData(fileUrl, fileName) {
-      const newLec = {
-        title: document.getElementById('lecTitle').value,
-        subject: document.getElementById('lecSubject').value,
-        chapter: document.getElementById('lecChapter').value,
-        videoUrl: document.getElementById('lecVideo').value || "https://www.w3schools.com/html/mov_bbb.mp4",
-        fileUrl: fileUrl,
-        fileName: fileName,
-        description: document.getElementById('lecDesc').value,
-        instructor: 'Hai Ton',
-        date: new Date().toISOString().split('T')[0]
-      };
-      db.ref('lectures').push(newLec, err => {
-        if (!err) {
-          alert('Đăng bài giảng kèm tài liệu thành công!');
-          closeModal('modalLec');
-        } else {
-          alert('Có lỗi xảy ra: ' + err.message);
-        }
-      });
+    function selectTF(qNum, subItem, val) {
+      myAppState.userAnswers.tf[`${qNum}_${subItem}`] = val;
+      renderUI();
+    }
+
+    function inputSA(qNum, val) {
+      myAppState.userAnswers.sa[qNum] = val.trim();
     }
 
     function navTo(v) { 
@@ -550,8 +537,8 @@
       const exam = myAppState.exams.find(e => e.id === examId);
       if (!exam) return;
       myAppState.activeExam = exam;
-      myAppState.answersMap = {};
-      myAppState.timeRemaining = (exam.duration || 15) * 60;
+      myAppState.userAnswers = { mcq: {}, tf: {}, sa: {} };
+      myAppState.timeRemaining = (exam.duration || 45) * 60;
       myAppState.resultObj = null;
       myAppState.view = 'do_exam';
       renderUI();
@@ -560,7 +547,7 @@
       myAppState.timerRef = setInterval(() => {
         if (myAppState.timeRemaining > 0 && !myAppState.resultObj) {
           myAppState.timeRemaining--;
-          const clockEl = document.querySelector('.bg-red-100');
+          const clockEl = document.querySelector('.bg-red-500');
           if (clockEl) {
             const mm = Math.floor(myAppState.timeRemaining / 60);
             const ss = myAppState.timeRemaining % 60;
@@ -573,77 +560,42 @@
       }, 1000);
     }
 
-    function recordAnswer(qIdx, optIdx) {
-      myAppState.answersMap[qIdx] = optIdx;
-    }
-
     function finishExam() {
       if (myAppState.timerRef) clearInterval(myAppState.timerRef);
       if (!myAppState.activeExam) return;
-      let score = 0;
-      const questions = myAppState.activeExam.questions || [];
-      questions.forEach((q, idx) => {
-        if (myAppState.answersMap[idx] === q.correctAnswer) score++;
-      });
-      const finalScore = Number(((score / questions.length) * 10).toFixed(1));
-      
+
+      const exam = myAppState.activeExam;
+      let totalCorrect = 0;
+      let totalQuestions = (exam.mcqCount || 0) + (exam.saCount || 0);
+
+      // Chấm trắc nghiệm 4 lựa chọn
+      const mcqKeys = (exam.mcqKey || '').split(',').map(k => k.trim().toUpperCase());
+      for (let i = 1; i <= exam.mcqCount; i++) {
+        if (myAppState.userAnswers.mcq[i] && myAppState.userAnswers.mcq[i] === mcqKeys[i-1]) {
+          totalCorrect++;
+        }
+      }
+
+      // Chấm trả lời ngắn
+      const saKeys = (exam.saKey || '').split(',').map(k => k.trim());
+      for (let i = 1; i <= exam.saCount; i++) {
+        if (myAppState.userAnswers.sa[i] && myAppState.userAnswers.sa[i] === saKeys[i-1]) {
+          totalCorrect++;
+        }
+      }
+
+      const finalScore = totalQuestions > 0 ? Number(((totalCorrect / totalQuestions) * 10).toFixed(1)) : 10;
+
       const subData = {
-        examTitle: myAppState.activeExam.title,
+        examTitle: exam.title,
         studentName: myAppState.currentUser.username,
         score: finalScore,
-        correctCount: score,
-        totalQuestions: questions.length,
         date: new Date().toLocaleString()
       };
 
       db.ref('submissions').push(subData);
-      myAppState.resultObj = { score, total: questions.length, finalScore };
+      myAppState.resultObj = { finalScore };
       renderUI();
-    }
-
-    // BỘ BÓC TÁCH LATEX & MATH TYPE THÔNG MINH
-    function parseLatexCode() {
-      const code = document.getElementById('latexText').value;
-      if (!code.trim()) return alert('Vui lòng dán nội dung mã LaTeX!');
-      try {
-        let parsed = [];
-        // Hỗ trợ cả định dạng \begin{ex} lẫn tách dòng câu hỏi tổng quát có chứa công thức equation / math
-        if (code.includes('\\begin{ex}')) {
-          const rawBlocks = code.split(/\\begin\{ex\}/i).filter(b => b.trim().length > 0);
-          rawBlocks.forEach(b => {
-            let parts = b.split(/\\choice/i);
-            let qText = parts[0].replace(/\\end\{ex\}/g, '').replace(/^(Câu\s*\d+[\.:]?)/i, '').trim();
-            let options = ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'];
-            if (parts.length > 1) {
-              let matches = parts[1].match(/\{([^}]*)\}/g);
-              if (matches && matches.length >= 4) {
-                for (let i = 0; i < 4; i++) options[i] = matches[i].replace(/^\{|\}$/g, '').trim();
-              }
-            }
-            if (qText) parsed.push({ questionText: qText, options, correctAnswer: 0 });
-          });
-        } else {
-          // Xử lý khi dán các định dạng equation / math / text thông thường
-          let lines = code.split(/\n\s*\n/).filter(l => l.trim().length > 0);
-          lines.forEach((line, idx) => {
-            parsed.push({
-              questionText: line.replace(/^(Câu\s*\d+[\.:]?)/i, '').trim(),
-              options: ["Đúng", "Sai", "Chưa xác định", "Không có đáp án"],
-              correctAnswer: 0
-            });
-          });
-        }
-
-        if (parsed.length > 0) {
-          myAppState.parsedQuestions = parsed;
-          document.getElementById('latexStatus').innerText = `Đã nhận diện thành công ${parsed.length} mục/câu hỏi (hỗ trợ công thức toán học)!`;
-          alert(`Đã phân tích thành công ${parsed.length} câu hỏi!`);
-        } else {
-          alert('Không tìm thấy cấu trúc câu hỏi hợp lệ.');
-        }
-      } catch (e) {
-        alert('Lỗi phân tích LaTeX: ' + e.message);
-      }
     }
 
     function toggleAIChat() {
@@ -678,7 +630,7 @@
       msgContainer.innerHTML += `
         <div id="${loadingId}" class="flex justify-start">
           <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%] flex items-center gap-2">
-            <i class="fa-solid fa-spinner animate-spin"></i> Trợ giảng AI đang giải toán...
+            <i class="fa-solid fa-spinner animate-spin"></i> Trợ giảng AI đang suy nghĩ...
           </div>
         </div>
       `;
@@ -690,7 +642,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{
-              parts: [{ text: "Bạn là một giáo viên trợ giảng môn Toán 9 sách Kết nối tri thức. Hãy giải đáp câu hỏi toán học sau một cách ngắn gọn, dễ hiểu và chính xác: " + text }]
+              parts: [{ text: "Bạn là trợ giảng môn Toán THCS/THPT. Hãy hướng dẫn câu hỏi: " + text }]
             }]
           })
         });
@@ -698,7 +650,7 @@
         const data = await response.json();
         document.getElementById(loadingId).remove();
 
-        let aiReply = "Xin lỗi, mình đang gặp sự cố kết nối nhỏ. Bạn vui lòng thử lại nhé!";
+        let aiReply = "Mình đã nhận được câu hỏi. Bạn hãy kiểm tra lại các bước tính toán nhé!";
         if (data.candidates && data.candidates[0].content.parts[0].text) {
           aiReply = data.candidates[0].content.parts[0].text;
         }
@@ -715,7 +667,7 @@
         msgContainer.innerHTML += `
           <div class="flex justify-start">
             <div class="bg-red-50 text-red-700 p-2.5 rounded-xl border border-red-100 max-w-[85%]">
-              Lỗi kết nối tới hệ thống AI. Vui lòng kiểm tra lại mạng.
+              Lỗi kết nối tới hệ thống AI.
             </div>
           </div>
         `;
