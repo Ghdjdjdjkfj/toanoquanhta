@@ -219,7 +219,7 @@
         mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (Tự Nhập Đáp Án)</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (3 Dạng: TN, Đúng/Sai, Trả lời ngắn)</button>` : ''}
           </div>
           ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,7 +227,7 @@
                 <div class="bg-white p-4 rounded shadow border flex justify-between items-center">
                   <div>
                     <h3 class="font-bold text-blue-700">${e.title}</h3>
-                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} Trắc nghiệm - ${e.saCount || 0} Trả lời ngắn</p>
+                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} TN - ${e.tfCount || 0} Đúng/Sai - ${e.saCount || 0} Ngắn</p>
                   </div>
                   <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
                 </div>
@@ -257,7 +257,7 @@
               <div class="flex-1 overflow-y-auto p-6 space-y-6">
                 <div class="text-center bg-blue-50 p-6 rounded-xl border border-blue-100 max-w-xl mx-auto">
                   <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
-                  <p class="text-gray-700 text-sm mb-4">Bạn trả lời đúng ${myAppState.resultObj.correctCount} / ${myAppState.resultObj.totalQuestions} câu hỏi.</p>
+                  <p class="text-gray-700 text-sm mb-4">Bạn trả lời đúng ${myAppState.resultObj.correctCount} phần câu hỏi.</p>
                   <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 text-sm">Quay lại danh sách đề thi</button>
                 </div>
 
@@ -282,9 +282,30 @@
                     </div>
                   ` : ''}
 
+                  ${exam.tfCount > 0 ? `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                      <h4 class="font-bold text-xs text-amber-800 mb-3 uppercase">Phần II. Trắc nghiệm Đúng / Sai</h4>
+                      <div class="space-y-2 text-xs">
+                        ${Array.from({length: exam.tfCount}).map((_, i) => `
+                          <div class="p-2.5 rounded border bg-gray-50">
+                            <span class="font-bold block mb-1">Câu ${i+1}:</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              ${['a','b','c','d'].map(sub => {
+                                const uVal = myAppState.userAnswers.tf[`${i+1}_${sub}`] || '-';
+                                const cVal = (exam.tfKeys?.[i]?.[sub]) || '?';
+                                const ok = uVal === cVal;
+                                return `<div class="p-1.5 rounded border ${ok ? 'bg-green-50' : 'bg-red-50'}">${sub}) Bạn: <b>${uVal}</b> | Chuẩn: <b>${cVal}</b></div>`;
+                              }).join('')}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
                   ${exam.saCount > 0 ? `
                     <div class="bg-white p-4 rounded-xl border shadow-sm">
-                      <h4 class="font-bold text-xs text-indigo-800 mb-3 uppercase">Phần II. Trả lời ngắn</h4>
+                      <h4 class="font-bold text-xs text-indigo-800 mb-3 uppercase">Phần III. Trả lời ngắn</h4>
                       <div class="space-y-2 text-xs">
                         ${Array.from({length: exam.saCount}).map((_, i) => {
                           const userAns = myAppState.userAnswers.sa[i+1] || '(Trống)';
@@ -317,6 +338,7 @@
                 <div class="w-full md:w-1/2 p-4 overflow-y-auto h-1/2 md:h-full bg-white space-y-6">
                   <h3 class="font-bold text-lg text-blue-800 border-b pb-2"><i class="fa-solid fa-list-check mr-2"></i>PHIẾU TÔ ĐÁP ÁN</h3>
 
+                  <!-- Phần I: Trắc nghiệm 4 lựa chọn -->
                   ${(exam.mcqCount > 0) ? `
                     <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                       <h4 class="font-bold text-sm text-blue-900 mb-3">PHẦN I. Trắc nghiệm 4 lựa chọn</h4>
@@ -335,9 +357,35 @@
                     </div>
                   ` : ''}
 
+                  <!-- Phần II: Đúng / Sai -->
+                  ${(exam.tfCount > 0) ? `
+                    <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+                      <h4 class="font-bold text-sm text-amber-900 mb-3">PHẦN II. Trắc nghiệm Đúng / Sai</h4>
+                      <div class="space-y-3">
+                        ${Array.from({length: exam.tfCount}).map((_, i) => `
+                          <div class="bg-white p-2.5 rounded border text-xs">
+                            <div class="font-bold text-amber-800 mb-1">Câu ${i+1}:</div>
+                            <div class="grid grid-cols-2 gap-2">
+                              ${['a','b','c','d'].map(sub => `
+                                <div class="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                                  <span class="font-semibold text-gray-600">${sub})</span>
+                                  <div class="flex gap-1">
+                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'Đ')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'Đ' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}">Đúng</button>
+                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'S')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'S' ? 'bg-red-600 text-white' : 'bg-white text-gray-700'}">Sai</button>
+                                  </div>
+                                </div>
+                              `).join('')}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- Phần III: Trả lời ngắn -->
                   ${(exam.saCount > 0) ? `
                     <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                      <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN II. Trả lời ngắn</h4>
+                      <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN III. Trả lời ngắn</h4>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${Array.from({length: exam.saCount}).map((_, i) => `
                           <div class="bg-white p-2.5 rounded border text-xs flex items-center gap-2">
@@ -453,27 +501,31 @@
           </div>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI (GIÁO VIÊN TỰ NHẬP HÀNG ĐÁP ÁN GỐC) -->
+        <!-- MODAL TẠO ĐỀ THI (3 DẠNG: TN, ĐÚNG/SAI, TRẢ LỜI NGẮN) -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra (Tự Nhập Hàng Đáp Án)</h3>
+            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra (3 Phần Chuẩn)</h3>
             <form id="formAddExam" class="space-y-3 text-sm">
               <div>
                 <label class="block text-xs font-semibold mb-1">Tên bài kiểm tra</label>
                 <input type="text" id="examTitle" required class="w-full p-2 border rounded">
               </div>
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-4 gap-2">
                 <div>
-                  <label class="block text-xs font-semibold mb-1">Thời gian (phút)</label>
+                  <label class="block text-[10px] font-semibold mb-1">Thời gian (p)</label>
                   <input type="number" id="examDuration" value="45" required class="w-full p-2 border rounded text-xs">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold mb-1">Số câu TN</label>
+                  <label class="block text-[10px] font-semibold mb-1">Số câu TN</label>
                   <input type="number" id="mcqCount" value="12" class="w-full p-2 border rounded text-xs">
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold mb-1">Số câu TL ngắn</label>
-                  <input type="number" id="saCount" value="4" class="w-full p-2 border rounded text-xs">
+                  <label class="block text-[10px] font-semibold mb-1">Số câu Đ/S</label>
+                  <input type="number" id="tfCount" value="4" class="w-full p-2 border rounded text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold mb-1">Số câu Ngắn</label>
+                  <input type="number" id="saCount" value="2" class="w-full p-2 border rounded text-xs">
                 </div>
               </div>
 
@@ -482,15 +534,19 @@
                 <input type="file" id="examFileInput" required accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-gray-50">
               </div>
 
-              <div class="border p-3 rounded bg-gray-50 space-y-2">
-                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Thầy/Cô tự nhập hàng đáp án gốc:</span>
+              <div class="border p-3 rounded bg-gray-50 space-y-3">
+                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Nhập đáp án gốc chuẩn:</span>
                 <div>
-                  <label class="block text-[10px] font-semibold text-blue-800">Đáp án Trắc nghiệm (Nhập cách nhau bởi dấu phẩy, ví dụ: A,B,C,D,A,B...)</label>
-                  <input type="text" id="mcqKey" required placeholder="A,B,C,D,A,B,C,D,A,B,C,D" class="w-full p-2 border rounded text-xs bg-white font-mono">
+                  <label class="block text-[10px] font-semibold text-blue-800">1. Đáp án Trắc nghiệm (Ví dụ: A,B,C,D,A,B...)</label>
+                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B..." class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold text-indigo-800">Đáp án Trả lời ngắn (Nhập cách nhau bởi dấu phẩy, ví dụ: 12,-5,3.5,0)</label>
-                  <input type="text" id="saKey" placeholder="12, -5, 3.5, 0" class="w-full p-2 border rounded text-xs bg-white font-mono">
+                  <label class="block text-[10px] font-semibold text-amber-800">2. Đáp án Đúng/Sai (Nhập dạng Đ/S cho các ý a,b,c,d mỗi câu, cách nhau bởi phẩy. Ví dụ: Đ,S,Đ,S, S,Đ,Đ,S...)</label>
+                  <input type="text" id="tfKey" placeholder="Đ,S,Đ,S, Đ,Đ,S,S..." class="w-full p-2 border rounded text-xs bg-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-indigo-800">3. Đáp án Trả lời ngắn (Ví dụ: 12, -5, 3.5...)</label>
+                  <input type="text" id="saKey" placeholder="12, -5, 3.5..." class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
               </div>
 
@@ -554,13 +610,29 @@
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function(uploadEvent) {
+              // Chuyển chuỗi Đúng/Sai thành mảng cấu trúc cho từng câu (mỗi câu 4 ý a,b,c,d)
+              const rawTf = document.getElementById('tfKey').value.split(',').map(s => s.trim().toUpperCase());
+              let tfKeys = [];
+              let idx = 0;
+              const tfCount = Number(document.getElementById('tfCount').value) || 0;
+              for(let i = 0; i < tfCount; i++) {
+                tfKeys.push({
+                  a: rawTf[idx++] || 'Đ',
+                  b: rawTf[idx++] || 'S',
+                  c: rawTf[idx++] || 'Đ',
+                  d: rawTf[idx++] || 'S'
+                });
+              }
+
               const newExam = {
                 title: document.getElementById('examTitle').value,
                 duration: Number(document.getElementById('examDuration').value),
                 fileUrl: uploadEvent.target.result,
                 mcqCount: Number(document.getElementById('mcqCount').value),
+                tfCount: tfCount,
                 saCount: Number(document.getElementById('saCount').value),
                 mcqKey: document.getElementById('mcqKey').value,
+                tfKeys: tfKeys,
                 saKey: document.getElementById('saKey').value
               };
               db.ref('exams').push(newExam, err => {
@@ -625,8 +697,9 @@
 
       const exam = myAppState.activeExam;
       let totalCorrect = 0;
-      let totalQuestions = (exam.mcqCount || 0) + (exam.saCount || 0);
+      let totalItems = (exam.mcqCount || 0) + ((exam.tfCount || 0) * 4) + (exam.saCount || 0);
 
+      // 1. Chấm trắc nghiệm 4 lựa chọn
       const mcqKeys = (exam.mcqKey || '').split(',').map(k => k.trim().toUpperCase());
       for (let i = 1; i <= exam.mcqCount; i++) {
         if (myAppState.userAnswers.mcq[i] && myAppState.userAnswers.mcq[i] === mcqKeys[i-1]) {
@@ -634,6 +707,18 @@
         }
       }
 
+      // 2. Chấm Đúng / Sai (mỗi ý a,b,c,d là 1 điểm thành phần)
+      for (let i = 1; i <= (exam.tfCount || 0); i++) {
+        ['a', 'b', 'c', 'd'].forEach(sub => {
+          const uVal = myAppState.userAnswers.tf[`${i}_${sub}`];
+          const cVal = exam.tfKeys?.[i-1]?.[sub];
+          if (uVal && uVal === cVal) {
+            totalCorrect++;
+          }
+        });
+      }
+
+      // 3. Chấm trả lời ngắn
       const saKeys = (exam.saKey || '').split(',').map(k => k.trim());
       for (let i = 1; i <= exam.saCount; i++) {
         if (myAppState.userAnswers.sa[i] && myAppState.userAnswers.sa[i] === saKeys[i-1]) {
@@ -641,7 +726,7 @@
         }
       }
 
-      const finalScore = totalQuestions > 0 ? Number(((totalCorrect / totalQuestions) * 10).toFixed(1)) : 10;
+      const finalScore = totalItems > 0 ? Number(((totalCorrect / totalItems) * 10).toFixed(1)) : 10;
 
       const subData = {
         examTitle: exam.title,
@@ -651,7 +736,7 @@
       };
 
       db.ref('submissions').push(subData);
-      myAppState.resultObj = { finalScore, correctCount: totalCorrect, totalQuestions };
+      myAppState.resultObj = { finalScore, correctCount: totalCorrect, totalQuestions: totalItems };
       renderUI();
     }
 
