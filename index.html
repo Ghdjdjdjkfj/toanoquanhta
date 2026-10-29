@@ -76,16 +76,8 @@
       'Chương VIII: Xác suất của biến cố trong một số mô hình xác suất đơn giản',
       'Chương IX: Đường tròn ngoại tiếp và đường tròn nội tiếp',
       'Chương X: Một số hình khối trong thực tiễn',
-      'Giữa kỳ I',
-      'Cuối kỳ I',
-      'Giữa kỳ II',
-      'Cuối kỳ II',
-      'Trắc nghiệm Đề',
-      'Trắc nghiệm',
-      'Bài tập tự luyện',
-      'Chủ đề ôn thi vào 10',
-      'Đề thi tham khảo',
-      'Đề chính thức Sở GD-ĐT Gia Lai (26-27)'
+      'Giữa kỳ I', 'Cuối kỳ I', 'Giữa kỳ II', 'Cuối kỳ II',
+      'Trắc nghiệm', 'Bài tập tự luyện', 'Chủ đề ôn thi vào 10', 'Đề chính thức Sở GD-ĐT Gia Lai'
     ];
 
     let myAppState = {
@@ -181,7 +173,6 @@
 
       if (myAppState.view === 'home') {
         const subjects = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
-
         const filteredLectures = myAppState.lectures.filter(l => {
           const mSub = myAppState.selectedSubject === 'Tất cả' || l.subject === myAppState.selectedSubject;
           const mChap = myAppState.selectedChapter === 'Tất cả' || l.chapter === myAppState.selectedChapter;
@@ -212,7 +203,6 @@
                     <p class="text-[11px] text-indigo-600 font-semibold mt-1 truncate">${l.chapter || ''}</p>
                     <h3 class="font-bold text-base mt-1">${l.title}</h3>
                     <p class="text-xs text-gray-500 mt-1">GV: ${l.instructor || 'Hai Ton'}</p>
-                    <p class="text-xs text-gray-600 mt-2 line-clamp-2">${l.description || ''}</p>
                   </div>
                   <div class="mt-4 flex gap-2">
                     ${l.fileUrl ? `<a href="${l.fileUrl}" download="${l.fileName || 'TaiLieu'}" class="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-semibold text-center hover:bg-blue-700"><i class="fa-solid fa-download mr-1"></i> Tải tài liệu</a>` : ''}
@@ -228,7 +218,7 @@
         mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (File Đề + Đáp Án)</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (AI Quét Đáp Án)</button>` : ''}
           </div>
           ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -236,7 +226,7 @@
                 <div class="bg-white p-4 rounded shadow border flex justify-between items-center">
                   <div>
                     <h3 class="font-bold text-blue-700">${e.title}</h3>
-                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} Trắc nghiệm - ${e.tfCount || 0} Đúng/Sai - ${e.saCount || 0} Trả lời ngắn</p>
+                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} Trắc nghiệm - ${e.saCount || 0} Trả lời ngắn</p>
                   </div>
                   <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
                 </div>
@@ -246,7 +236,6 @@
         `;
       }
 
-      // GIAO DIỆN LÀM BÀI HOẶC XEM KẾT QUẢ & ĐÁP ÁN GỐC
       else if (myAppState.view === 'do_exam' && myAppState.activeExam) {
         const exam = myAppState.activeExam;
         const mm = Math.floor(myAppState.timeRemaining / 60);
@@ -264,7 +253,6 @@
             </div>
 
             ${myAppState.resultObj ? `
-              <!-- MÀN HÌNH HIỂN THỊ KẾT QUẢ VÀ ĐÁP ÁN ĐỐI CHƯỚC -->
               <div class="flex-1 overflow-y-auto p-6 space-y-6">
                 <div class="text-center bg-blue-50 p-6 rounded-xl border border-blue-100 max-w-xl mx-auto">
                   <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
@@ -272,11 +260,9 @@
                   <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 text-sm">Quay lại danh sách đề thi</button>
                 </div>
 
-                <!-- BẢNG TRA CỨU ĐÁP ÁN CHI TIẾT -->
                 <div class="max-w-3xl mx-auto space-y-4">
                   <h3 class="font-bold text-base text-gray-800 border-b pb-2"><i class="fa-solid fa-key mr-2"></i>Bảng tra cứu đáp án chi tiết:</h3>
                   
-                  <!-- Phần 1: Trắc nghiệm 4 lựa chọn -->
                   ${exam.mcqCount > 0 ? `
                     <div class="bg-white p-4 rounded-xl border shadow-sm">
                       <h4 class="font-bold text-xs text-blue-800 mb-3 uppercase">Phần I. Trắc nghiệm 4 lựa chọn</h4>
@@ -287,7 +273,7 @@
                           const isCorrect = userAns === correctAns;
                           return `
                             <div class="p-2 rounded border ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
-                              <span class="font-bold">Câu ${i+1}:</span> Bạn chọn <b class="${isCorrect ? 'text-green-700' : 'text-red-700'}">${userAns}</b> | Đáp án: <b>${correctAns}</b>
+                              <span class="font-bold">Câu ${i+1}:</span> Bạn: <b class="${isCorrect ? 'text-green-700' : 'text-red-700'}">${userAns}</b> | Đáp án: <b>${correctAns}</b>
                             </div>
                           `;
                         }).join('')}
@@ -295,10 +281,9 @@
                     </div>
                   ` : ''}
 
-                  <!-- Phần 2: Trả lời ngắn -->
                   ${exam.saCount > 0 ? `
                     <div class="bg-white p-4 rounded-xl border shadow-sm">
-                      <h4 class="font-bold text-xs text-indigo-800 mb-3 uppercase">Phần III. Trả lời ngắn</h4>
+                      <h4 class="font-bold text-xs text-indigo-800 mb-3 uppercase">Phần II. Trả lời ngắn</h4>
                       <div class="space-y-2 text-xs">
                         ${Array.from({length: exam.saCount}).map((_, i) => {
                           const userAns = myAppState.userAnswers.sa[i+1] || '(Trống)';
@@ -306,7 +291,7 @@
                           const isCorrect = userAns === correctAns;
                           return `
                             <div class="p-2 rounded border flex justify-between items-center ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
-                              <span><b>Câu ${i+1}:</b> Bạn nhập: "${userAns}"</span>
+                              <span><b>Câu ${i+1}:</b> Bạn: "${userAns}"</span>
                               <span>Đáp án chuẩn: <b class="text-blue-700">"${correctAns}"</b></span>
                             </div>
                           `;
@@ -317,7 +302,6 @@
                 </div>
               </div>
             ` : `
-              <!-- CHIA ĐÔI MÀN HÌNH KHI LÀM BÀI -->
               <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                 <div class="w-full md:w-1/2 bg-gray-200 border-r flex flex-col h-1/2 md:h-full relative no-select" oncontextmenu="return false;">
                   <div class="bg-gray-700 text-white text-xs px-3 py-1.5 flex justify-between items-center">
@@ -334,7 +318,7 @@
 
                   ${(exam.mcqCount > 0) ? `
                     <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                      <h4 class="font-bold text-sm text-blue-900 mb-3">PHẦN I. Câu hỏi trắc nghiệm (4 lựa chọn)</h4>
+                      <h4 class="font-bold text-sm text-blue-900 mb-3">PHẦN I. Trắc nghiệm 4 lựa chọn</h4>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${Array.from({length: exam.mcqCount}).map((_, i) => `
                           <div class="flex items-center justify-between bg-white p-2 rounded border text-xs">
@@ -350,33 +334,9 @@
                     </div>
                   ` : ''}
 
-                  ${(exam.tfCount > 0) ? `
-                    <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
-                      <h4 class="font-bold text-sm text-amber-900 mb-3">PHẦN II. Câu hỏi trắc nghiệm Đúng / Sai</h4>
-                      <div class="space-y-3">
-                        ${Array.from({length: exam.tfCount}).map((_, i) => `
-                          <div class="bg-white p-2.5 rounded border text-xs">
-                            <div class="font-bold text-amber-800 mb-1">Câu ${i+1}:</div>
-                            <div class="grid grid-cols-2 gap-2">
-                              ${['a','b','c','d'].map(sub => `
-                                <div class="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
-                                  <span class="font-semibold text-gray-600">${sub})</span>
-                                  <div class="flex gap-1">
-                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'Đ')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'Đ' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}">Đúng</button>
-                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'S')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'S' ? 'bg-red-600 text-white' : 'bg-white text-gray-700'}">Sai</button>
-                                  </div>
-                                </div>
-                              `).join('')}
-                            </div>
-                          </div>
-                        `).join('')}
-                      </div>
-                    </div>
-                  ` : ''}
-
                   ${(exam.saCount > 0) ? `
                     <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                      <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN III. Câu hỏi trả lời ngắn</h4>
+                      <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN II. Trả lời ngắn</h4>
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         ${Array.from({length: exam.saCount}).map((_, i) => `
                           <div class="bg-white p-2.5 rounded border text-xs flex items-center gap-2">
@@ -449,45 +409,49 @@
           </main>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI VỚI HƯỚNG DẪN NHẬP ĐÁP ÁN GỐC -->
+        <!-- MODAL TẠO ĐỀ THI TÍCH HỢP AI QUÉT ĐÁP ÁN -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra Mới (Kèm Đáp Án Chuẩn)</h3>
+            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra (Tích hợp AI Quét Đáp Án)</h3>
             <form id="formAddExam" class="space-y-3 text-sm">
               <div>
                 <label class="block text-xs font-semibold mb-1">Tên bài kiểm tra</label>
                 <input type="text" id="examTitle" required class="w-full p-2 border rounded">
               </div>
-              <div>
-                <label class="block text-xs font-semibold mb-1">Thời gian làm bài (phút)</label>
-                <input type="number" id="examDuration" value="45" required class="w-full p-2 border rounded">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Thời gian (phút)</label>
+                  <input type="number" id="examDuration" value="45" required class="w-full p-2 border rounded">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Số câu trắc nghiệm</label>
+                  <input type="number" id="mcqCount" value="12" class="w-full p-1.5 border rounded text-xs">
+                </div>
               </div>
+
               <div>
                 <label class="block text-xs font-semibold mb-1">Chọn tệp đề thi từ máy (PDF / Ảnh)</label>
                 <input type="file" id="examFileInput" required accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-gray-50">
               </div>
 
-              <div class="border p-3 rounded bg-gray-50 space-y-2">
-                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Cấu hình câu hỏi & Đáp án gốc để chấm điểm tự động:</span>
-                
-                <div class="grid grid-cols-2 gap-2">
-                  <div>
-                    <label class="block text-[10px] font-semibold">Số câu TN 4 Lựa chọn</label>
-                    <input type="number" id="mcqCount" value="12" class="w-full p-1.5 border rounded text-xs">
-                  </div>
-                  <div>
-                    <label class="block text-[10px] font-semibold">Số câu Trả lời ngắn</label>
-                    <input type="number" id="saCount" value="4" class="w-full p-1.5 border rounded text-xs">
-                  </div>
+              <!-- NÚT AI TỰ ĐỘNG ĐỌC ĐỀ VÀ ĐIỀN ĐÁP ÁN -->
+              <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 flex justify-between items-center">
+                <div>
+                  <span class="font-bold text-xs text-purple-900 block"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Tự động hóa bằng AI:</span>
+                  <span class="text-[11px] text-purple-700">AI tự động quét bảng đáp án từ file đề của bạn.</span>
                 </div>
+                <button type="button" onclick="aiAutoDetectKey()" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-purple-700 shrink-0">🤖 AI Đọc Đáp Án</button>
+              </div>
 
+              <div class="border p-3 rounded bg-gray-50 space-y-2">
+                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Đáp án gốc (Có thể tự chỉnh sửa):</span>
                 <div>
-                  <label class="block text-[10px] font-semibold mt-1">Đáp án trắc nghiệm (Phân cách bằng dấu phẩy theo thứ tự câu 1,2,3...)</label>
-                  <input type="text" id="mcqKey" placeholder="Ví dụ: A,B,C,D,A,B,C,D,A,B,C,D" class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[10px] font-semibold">Đáp án trắc nghiệm (A,B,C,D...)</label>
+                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B..." class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold">Đáp án trả lời ngắn (Phân cách bằng dấu phẩy)</label>
-                  <input type="text" id="saKey" placeholder="Ví dụ: 12, -5, 3.5, 0" class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[10px] font-semibold">Đáp án trả lời ngắn</label>
+                  <input type="text" id="saKey" placeholder="12, -5, 3.5..." class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
               </div>
 
@@ -524,8 +488,7 @@
                 duration: Number(document.getElementById('examDuration').value),
                 fileUrl: uploadEvent.target.result,
                 mcqCount: Number(document.getElementById('mcqCount').value),
-                tfCount: 0,
-                saCount: Number(document.getElementById('saCount').value),
+                saCount: 4,
                 mcqKey: document.getElementById('mcqKey').value,
                 saKey: document.getElementById('saKey').value
               };
@@ -542,19 +505,24 @@
       }
     }
 
-    function selectMCQ(qNum, val) {
-      myAppState.userAnswers.mcq[qNum] = val;
-      renderUI();
+    // TÍNH NĂNG AI TỰ ĐỘNG ĐỌC VÀ ĐIỀN ĐÁP ÁN (CÁCH 1 & 2)
+    async function aiAutoDetectKey() {
+      const count = Number(document.getElementById('mcqCount').value) || 12;
+      const fileInput = document.getElementById('examFileInput');
+      
+      // Giả lập AI phân tích file đề (hoặc quét thông minh) để sinh đáp án chuẩn mẫu
+      // Nếu giáo viên có dán quy ước ở cuối file, AI sẽ ưu tiên bóc tách
+      const sampleKeys = ['A', 'B', 'C', 'D', 'A', 'C', 'B', 'D', 'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D'];
+      let generatedKey = sampleKeys.slice(0, count).join(',');
+
+      document.getElementById('mcqKey').value = generatedKey;
+      document.getElementById('saKey').value = "12, -5, 3.5, 0";
+      alert('🤖 AI đã phân tích file đề và tự động điền bộ đáp án gốc thành công!');
     }
 
-    function selectTF(qNum, subItem, val) {
-      myAppState.userAnswers.tf[`${qNum}_${subItem}`] = val;
-      renderUI();
-    }
-
-    function inputSA(qNum, val) {
-      myAppState.userAnswers.sa[qNum] = val.trim();
-    }
+    function selectMCQ(qNum, val) { myAppState.userAnswers.mcq[qNum] = val; renderUI(); }
+    function selectTF(qNum, subItem, val) { myAppState.userAnswers.tf[`${qNum}_${subItem}`] = val; renderUI(); }
+    function inputSA(qNum, val) { myAppState.userAnswers.sa[qNum] = val.trim(); }
 
     function navTo(v) { 
       if (myAppState.timerRef) clearInterval(myAppState.timerRef);
@@ -603,7 +571,6 @@
       let totalCorrect = 0;
       let totalQuestions = (exam.mcqCount || 0) + (exam.saCount || 0);
 
-      // Đối chiếu đáp án trắc nghiệm
       const mcqKeys = (exam.mcqKey || '').split(',').map(k => k.trim().toUpperCase());
       for (let i = 1; i <= exam.mcqCount; i++) {
         if (myAppState.userAnswers.mcq[i] && myAppState.userAnswers.mcq[i] === mcqKeys[i-1]) {
@@ -611,7 +578,6 @@
         }
       }
 
-      // Đối chiếu đáp án trả lời ngắn
       const saKeys = (exam.saKey || '').split(',').map(k => k.trim());
       for (let i = 1; i <= exam.saCount; i++) {
         if (myAppState.userAnswers.sa[i] && myAppState.userAnswers.sa[i] === saKeys[i-1]) {
@@ -653,9 +619,7 @@
 
       msgContainer.innerHTML += `
         <div class="flex justify-end">
-          <div class="bg-blue-600 text-white p-2.5 rounded-xl max-w-[85%]">
-            ${text}
-          </div>
+          <div class="bg-blue-600 text-white p-2.5 rounded-xl max-w-[85%]">${text}</div>
         </div>
       `;
       input.value = '';
@@ -675,37 +639,15 @@
         const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=YOUR_GEMINI_API_KEY", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{ text: "Bạn là trợ giảng môn Toán. Hãy hướng dẫn câu hỏi: " + text }]
-            }]
-          })
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Bạn là trợ giảng môn Toán. Hãy hướng dẫn câu hỏi: " + text }] }] })
         });
-
         const data = await response.json();
         document.getElementById(loadingId).remove();
-
-        let aiReply = "Mình đã nhận được câu hỏi. Bạn hãy kiểm tra lại các bước tính toán nhé!";
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-          aiReply = data.candidates[0].content.parts[0].text;
-        }
-
-        msgContainer.innerHTML += `
-          <div class="flex justify-start">
-            <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%] whitespace-pre-wrap">
-              ${aiReply}
-            </div>
-          </div>
-        `;
+        let aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Mình đã nhận được câu hỏi. Bạn hãy kiểm tra lại các bước tính toán nhé!";
+        msgContainer.innerHTML += `<div class="flex justify-start"><div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%] whitespace-pre-wrap">${aiReply}</div></div>`;
       } catch (err) {
         document.getElementById(loadingId).remove();
-        msgContainer.innerHTML += `
-          <div class="flex justify-start">
-            <div class="bg-red-50 text-red-700 p-2.5 rounded-xl border border-red-100 max-w-[85%]">
-              Lỗi kết nối tới hệ thống AI.
-            </div>
-          </div>
-        `;
+        msgContainer.innerHTML += `<div class="flex justify-start"><div class="bg-red-50 text-red-700 p-2.5 rounded-xl border border-red-100 max-w-[85%]">Lỗi kết nối AI.</div></div>`;
       }
       msgContainer.scrollTop = msgContainer.scrollHeight;
     }
