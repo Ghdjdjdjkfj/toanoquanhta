@@ -255,14 +255,13 @@
 
             ${myAppState.resultObj ? `
               <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                <!-- KHUNG ĐIỂM SỐ VÀ AI NHẬN XÉT / LỜI CHÚC -->
+                <!-- KHUNG ĐIỂM SỐ VÀ AI NHẬN XÉT -->
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200 max-w-2xl mx-auto shadow-sm space-y-4">
                   <div class="text-center">
                     <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
                     <p class="text-gray-700 text-sm">Bạn trả lời đúng ${myAppState.resultObj.correctCount} / ${myAppState.resultObj.totalQuestions} phần câu hỏi.</p>
                   </div>
 
-                  <!-- PHẦN AI NHẬN XÉT & CẦN CỐ GẮNG -->
                   <div class="bg-white p-4 rounded-xl border border-blue-100 text-xs space-y-2">
                     <div class="font-bold text-blue-800 flex items-center gap-1.5 text-sm">
                       <i class="fa-solid fa-robot text-blue-600"></i> AI Nhận xét & Đánh giá năng lực:
@@ -288,8 +287,8 @@
                       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                         ${Array.from({length: exam.mcqCount}).map((_, i) => {
                           const userAns = myAppState.userAnswers.mcq[i+1] || '(Chưa chọn)';
-                          const correctAns = (exam.mcqKey || '').split(',')[i]?.trim().toUpperCase() || '?';
-                          const isCorrect = userAns === correctAns;
+                          const correctAns = parseKeys(exam.mcqKey)[i] || '?';
+                          const isCorrect = cleanStr(userAns) === cleanStr(correctAns);
                           return `
                             <div class="p-2 rounded border ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
                               <span class="font-bold">Câu ${i+1}:</span> Bạn: <b class="${isCorrect ? 'text-green-700' : 'text-red-700'}">${userAns}</b> | Đáp án: <b>${correctAns}</b>
@@ -310,9 +309,9 @@
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                               ${['a','b','c','d'].map(sub => {
                                 const uVal = myAppState.userAnswers.tf[`${i+1}_${sub}`] || '-';
-                                const cVal = (exam.tfKeys?.[i]?.[sub]) || '?';
-                                const ok = uVal === cVal;
-                                return `<div class="p-1.5 rounded border ${ok ? 'bg-green-50' : 'bg-red-50'}">${sub}) Bạn: <b>${uVal}</b> | Chuẩn: <b>${cVal}</b></div>`;
+                                const cVal = exam.tfKeys?.[i]?.[sub] || '?';
+                                const ok = cleanStr(uVal) === cleanStr(cVal);
+                                return `<div class="p-1.5 rounded border ${ok ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">${sub}) Bạn: <b>${uVal}</b> | Chuẩn: <b>${cVal}</b></div>`;
                               }).join('')}
                             </div>
                           </div>
@@ -327,11 +326,11 @@
                       <div class="space-y-2 text-xs">
                         ${Array.from({length: exam.saCount}).map((_, i) => {
                           const userAns = myAppState.userAnswers.sa[i+1] || '(Trống)';
-                          const correctAns = (exam.saKey || '').split(',')[i]?.trim() || '?';
-                          const isCorrect = userAns === correctAns;
+                          const correctAns = parseKeys(exam.saKey)[i] || '?';
+                          const isCorrect = cleanStr(userAns) === cleanStr(correctAns);
                           return `
                             <div class="p-2 rounded border flex justify-between items-center ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
-                              <span><b>Câu ${i+1}:</b> Bạn: "${userAns}"</span>
+                              <span><b>Câu ${i+1}:</b> Bạn nhập: "<b>${userAns}</b>"</span>
                               <span>Đáp án chuẩn: <b class="text-blue-700">"${correctAns}"</b></span>
                             </div>
                           `;
@@ -356,7 +355,6 @@
                 <div class="w-full md:w-1/2 p-4 overflow-y-auto h-1/2 md:h-full bg-white space-y-6">
                   <h3 class="font-bold text-lg text-blue-800 border-b pb-2"><i class="fa-solid fa-list-check mr-2"></i>PHIẾU TÔ ĐÁP ÁN</h3>
 
-                  <!-- Phần I: Trắc nghiệm 4 lựa chọn -->
                   ${(exam.mcqCount > 0) ? `
                     <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                       <h4 class="font-bold text-sm text-blue-900 mb-3">PHẦN I. Trắc nghiệm 4 lựa chọn</h4>
@@ -375,7 +373,6 @@
                     </div>
                   ` : ''}
 
-                  <!-- Phần II: Đúng / Sai -->
                   ${(exam.tfCount > 0) ? `
                     <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
                       <h4 class="font-bold text-sm text-amber-900 mb-3">PHẦN II. Trắc nghiệm Đúng / Sai</h4>
@@ -400,7 +397,6 @@
                     </div>
                   ` : ''}
 
-                  <!-- Phần III: Trả lời ngắn -->
                   ${(exam.saCount > 0) ? `
                     <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
                       <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN III. Trả lời ngắn</h4>
@@ -408,7 +404,7 @@
                         ${Array.from({length: exam.saCount}).map((_, i) => `
                           <div class="bg-white p-2.5 rounded border text-xs flex items-center gap-2">
                             <span class="font-bold text-indigo-800 shrink-0">Câu ${i+1}:</span>
-                            <input type="text" placeholder="Nhập đáp án..." oninput="inputSA(${i+1}, this.value)" value="${myAppState.userAnswers.sa[i+1] || ''}" class="w-full p-1.5 border rounded outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
+                            <input type="text" placeholder="Ví dụ: 3,5 hoặc -2" oninput="inputSA(${i+1}, this.value)" value="${myAppState.userAnswers.sa[i+1] || ''}" class="w-full p-1.5 border rounded outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
                           </div>
                         `).join('')}
                       </div>
@@ -519,10 +515,10 @@
           </div>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI (3 PHẦN CHUẨN: TN, ĐÚNG/SAI, NGẮN) -->
+        <!-- MODAL TẠO ĐỀ THI (CẢI TIẾN NHẬP DẤU CHẤM PHẨY PHÂN CÁCH CÂU) -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra (3 Phần Chuẩn)</h3>
+            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra Mới</h3>
             <form id="formAddExam" class="space-y-3 text-sm">
               <div>
                 <label class="block text-xs font-semibold mb-1">Tên bài kiểm tra</label>
@@ -553,18 +549,20 @@
               </div>
 
               <div class="border p-3 rounded bg-gray-50 space-y-3">
-                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Nhập đáp án gốc chuẩn:</span>
-                <div>
-                  <label class="block text-[10px] font-semibold text-blue-800">1. Đáp án Trắc nghiệm (Ví dụ: A,B,C,D,A,B...)</label>
-                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B,C,D,A,B,C,D" class="w-full p-2 border rounded text-xs bg-white font-mono">
+                <div class="flex justify-between items-center border-b pb-1">
+                  <span class="font-bold text-xs text-gray-700">Nhập đáp án gốc (Phân cách giữa các CÂU bằng dấu chấm phẩy ;):</span>
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold text-amber-800">2. Đáp án Đúng/Sai (Nhập Đ/S các ý a,b,c,d cách nhau bởi phẩy. Ví dụ: Đ,S,Đ,S, S,Đ,Đ,S...)</label>
-                  <input type="text" id="tfKey" placeholder="Đ,S,Đ,S, Đ,Đ,S,S..." class="w-full p-2 border rounded text-xs bg-white font-mono">
+                  <label class="block text-[10px] font-semibold text-blue-800">1. Đáp án Trắc nghiệm (Ví dụ: A; B; C; D; A; B)</label>
+                  <input type="text" id="mcqKey" placeholder="A; B; C; D; A; B" class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold text-indigo-800">3. Đáp án Trả lời ngắn (Ví dụ: 12, -5, 3.5...)</label>
-                  <input type="text" id="saKey" placeholder="12, -5, 3.5..." class="w-full p-2 border rounded text-xs bg-white font-mono">
+                  <label class="block text-[10px] font-semibold text-amber-800">2. Đáp án Đúng/Sai (Mỗi câu nhập 4 ý a,b,c,d cách nhau phẩy, giữa các CÂU dùng dấu chấm phẩy ;)</label>
+                  <input type="text" id="tfKey" placeholder="Đ,S,Đ,S; S,Đ,Đ,S; Đ,Đ,S,S" class="w-full p-2 border rounded text-xs bg-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-indigo-800">3. Đáp án Trả lời ngắn (Thoải mái nhập số thập phân 3,5 hoặc 1/2. Phân cách giữa các CÂU bằng dấu ;)</label>
+                  <input type="text" id="saKey" placeholder="3,5; -5; 1/2; 0" class="w-full p-2 border rounded text-xs bg-white font-mono">
                 </div>
               </div>
 
@@ -628,16 +626,17 @@
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function(uploadEvent) {
-              const rawTf = document.getElementById('tfKey').value.split(',').map(s => s.trim().toUpperCase());
+              // Tách đáp án Đúng/Sai theo từng câu (dấu ;)
+              const tfGroup = document.getElementById('tfKey').value.split(';').map(g => g.trim());
               let tfKeys = [];
-              let idx = 0;
               const tfCount = Number(document.getElementById('tfCount').value) || 0;
               for(let i = 0; i < tfCount; i++) {
+                const subVals = (tfGroup[i] || '').split(',').map(s => s.trim().toUpperCase());
                 tfKeys.push({
-                  a: rawTf[idx++] || 'Đ',
-                  b: rawTf[idx++] || 'S',
-                  c: rawTf[idx++] || 'Đ',
-                  d: rawTf[idx++] || 'S'
+                  a: subVals[0] || 'Đ',
+                  b: subVals[1] || 'S',
+                  c: subVals[2] || 'Đ',
+                  d: subVals[3] || 'S'
                 });
               }
 
@@ -663,6 +662,21 @@
           }
         };
       }
+    }
+
+    // HÀM HỖ TRỢ TÁCH ĐÁP ÁN THEO DẤU CHẤM PHẨY HOẶC DẤU PHẨY MỘT CÁCH THÔNG MINH
+    function parseKeys(str) {
+      if (!str) return [];
+      if (str.includes(';')) {
+        return str.split(';').map(s => s.trim());
+      }
+      return str.split(',').map(s => s.trim());
+    }
+
+    // HÀM CHUẨN HÓA CHUỖI ĐỂ SO SÁNH ĐÚNG/SAI CHÍNH XÁC (KHÔNG BỊ LỖI KHOẢNG TRẮNG, DẤU PHẨY/CHẤM)
+    function cleanStr(val) {
+      if (!val) return '';
+      return val.toString().trim().replace(/\s+/g, '').replace('.', ',').toUpperCase();
     }
 
     function selectMCQ(qNum, val) { myAppState.userAnswers.mcq[qNum] = val; renderUI(); }
@@ -716,10 +730,10 @@
       let totalCorrect = 0;
       let totalItems = (exam.mcqCount || 0) + ((exam.tfCount || 0) * 4) + (exam.saCount || 0);
 
-      // 1. Chấm trắc nghiệm 4 lựa chọn
-      const mcqKeys = (exam.mcqKey || '').split(',').map(k => k.trim().toUpperCase());
+      // 1. Chấm Trắc nghiệm 4 lựa chọn
+      const mcqKeys = parseKeys(exam.mcqKey);
       for (let i = 1; i <= exam.mcqCount; i++) {
-        if (myAppState.userAnswers.mcq[i] && myAppState.userAnswers.mcq[i] === mcqKeys[i-1]) {
+        if (myAppState.userAnswers.mcq[i] && cleanStr(myAppState.userAnswers.mcq[i]) === cleanStr(mcqKeys[i-1])) {
           totalCorrect++;
         }
       }
@@ -729,23 +743,23 @@
         ['a', 'b', 'c', 'd'].forEach(sub => {
           const uVal = myAppState.userAnswers.tf[`${i}_${sub}`];
           const cVal = exam.tfKeys?.[i-1]?.[sub];
-          if (uVal && uVal === cVal) {
+          if (uVal && cleanStr(uVal) === cleanStr(cVal)) {
             totalCorrect++;
           }
         });
       }
 
-      // 3. Chấm trả lời ngắn
-      const saKeys = (exam.saKey || '').split(',').map(k => k.trim());
+      // 3. Chấm Trả lời ngắn
+      const saKeys = parseKeys(exam.saKey);
       for (let i = 1; i <= exam.saCount; i++) {
-        if (myAppState.userAnswers.sa[i] && myAppState.userAnswers.sa[i] === saKeys[i-1]) {
+        if (myAppState.userAnswers.sa[i] && cleanStr(myAppState.userAnswers.sa[i]) === cleanStr(saKeys[i-1])) {
           totalCorrect++;
         }
       }
 
       const finalScore = totalItems > 0 ? Number(((totalCorrect / totalItems) * 10).toFixed(1)) : 10;
 
-      // AI Nhận xét & Lời chúc dựa trên điểm số
+      // AI Nhận xét & Lời chúc dựa trên kết quả
       let aiComment = "";
       let aiWish = "";
       if (finalScore >= 9) {
