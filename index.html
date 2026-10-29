@@ -11,7 +11,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <style>
-    /* Ngăn chọn văn bản trên khung làm bài */
     .no-select {
       -webkit-user-select: none;
       -moz-user-select: none;
@@ -229,7 +228,7 @@
         mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (File Đề + Phiếu Đáp Án)</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi (File Đề + Đáp Án)</button>` : ''}
           </div>
           ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -247,7 +246,7 @@
         `;
       }
 
-      // GIAO DIỆN LÀM BÀI CHIA ĐÔI MÀN HÌNH (LƯỚT FILE ĐỀ + TÔ ĐÁP ÁN 3 DẠNG)
+      // GIAO DIỆN LÀM BÀI HOẶC XEM KẾT QUẢ & ĐÁP ÁN GỐC
       else if (myAppState.view === 'do_exam' && myAppState.activeExam) {
         const exam = myAppState.activeExam;
         const mm = Math.floor(myAppState.timeRemaining / 60);
@@ -255,25 +254,71 @@
 
         mainArea = `
           <div class="bg-white rounded shadow-lg overflow-hidden flex flex-col h-[calc(100vh-100px)]">
-            <!-- Thanh thông tin bài thi -->
             <div class="bg-blue-600 text-white p-3 flex justify-between items-center shrink-0">
               <h2 class="font-bold text-base truncate"><i class="fa-solid fa-file-signature mr-2"></i>${exam.title}</h2>
-              <div class="bg-red-500 text-white font-bold px-3 py-1 rounded text-sm shadow animate-pulse">
-                <i class="fa-solid fa-clock mr-1"></i> ${mm}:${ss.toString().padStart(2, '0')}
-              </div>
+              ${!myAppState.resultObj ? `
+                <div class="bg-red-500 text-white font-bold px-3 py-1 rounded text-sm shadow animate-pulse">
+                  <i class="fa-solid fa-clock mr-1"></i> ${mm}:${ss.toString().padStart(2, '0')}
+                </div>
+              ` : `<div class="bg-green-600 text-white font-bold px-3 py-1 rounded text-sm">Đã nộp bài</div>`}
             </div>
 
             ${myAppState.resultObj ? `
-              <div class="text-center py-12 px-4 flex-1 overflow-y-auto">
-                <div class="text-6xl font-bold text-blue-600 mb-3">${myAppState.resultObj.finalScore} <span class="text-2xl text-gray-500">/ 10 điểm</span></div>
-                <p class="text-gray-700 font-medium mb-6">Đã nộp bài thành công! Điểm số của bạn đã được ghi nhận vào hệ thống.</p>
-                <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700">Quay lại danh sách đề thi</button>
+              <!-- MÀN HÌNH HIỂN THỊ KẾT QUẢ VÀ ĐÁP ÁN ĐỐI CHƯỚC -->
+              <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <div class="text-center bg-blue-50 p-6 rounded-xl border border-blue-100 max-w-xl mx-auto">
+                  <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
+                  <p class="text-gray-700 text-sm mb-4">Bạn trả lời đúng ${myAppState.resultObj.correctCount} / ${myAppState.resultObj.totalQuestions} câu hỏi.</p>
+                  <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 text-sm">Quay lại danh sách đề thi</button>
+                </div>
+
+                <!-- BẢNG TRA CỨU ĐÁP ÁN CHI TIẾT -->
+                <div class="max-w-3xl mx-auto space-y-4">
+                  <h3 class="font-bold text-base text-gray-800 border-b pb-2"><i class="fa-solid fa-key mr-2"></i>Bảng tra cứu đáp án chi tiết:</h3>
+                  
+                  <!-- Phần 1: Trắc nghiệm 4 lựa chọn -->
+                  ${exam.mcqCount > 0 ? `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                      <h4 class="font-bold text-xs text-blue-800 mb-3 uppercase">Phần I. Trắc nghiệm 4 lựa chọn</h4>
+                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        ${Array.from({length: exam.mcqCount}).map((_, i) => {
+                          const userAns = myAppState.userAnswers.mcq[i+1] || '(Chưa chọn)';
+                          const correctAns = (exam.mcqKey || '').split(',')[i]?.trim().toUpperCase() || '?';
+                          const isCorrect = userAns === correctAns;
+                          return `
+                            <div class="p-2 rounded border ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
+                              <span class="font-bold">Câu ${i+1}:</span> Bạn chọn <b class="${isCorrect ? 'text-green-700' : 'text-red-700'}">${userAns}</b> | Đáp án: <b>${correctAns}</b>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <!-- Phần 2: Trả lời ngắn -->
+                  ${exam.saCount > 0 ? `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                      <h4 class="font-bold text-xs text-indigo-800 mb-3 uppercase">Phần III. Trả lời ngắn</h4>
+                      <div class="space-y-2 text-xs">
+                        ${Array.from({length: exam.saCount}).map((_, i) => {
+                          const userAns = myAppState.userAnswers.sa[i+1] || '(Trống)';
+                          const correctAns = (exam.saKey || '').split(',')[i]?.trim() || '?';
+                          const isCorrect = userAns === correctAns;
+                          return `
+                            <div class="p-2 rounded border flex justify-between items-center ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
+                              <span><b>Câu ${i+1}:</b> Bạn nhập: "${userAns}"</span>
+                              <span>Đáp án chuẩn: <b class="text-blue-700">"${correctAns}"</b></span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
               </div>
             ` : `
-              <!-- CHIA ĐÔI MÀN HÌNH: FILE ĐỀ BÊN TRÁI - TÔ ĐÁP ÁN BÊN PHẢI -->
+              <!-- CHIA ĐÔI MÀN HÌNH KHI LÀM BÀI -->
               <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                
-                <!-- KHUNG XEM FILE ĐỀ (KHÔNG CHO TẢI/COPY) -->
                 <div class="w-full md:w-1/2 bg-gray-200 border-r flex flex-col h-1/2 md:h-full relative no-select" oncontextmenu="return false;">
                   <div class="bg-gray-700 text-white text-xs px-3 py-1.5 flex justify-between items-center">
                     <span><i class="fa-solid fa-eye mr-1"></i> Khung xem đề thi (Chỉ xem)</span>
@@ -284,11 +329,9 @@
                   ` : `<div class="p-8 text-center text-gray-500">Không có file đề đính kèm.</div>`}
                 </div>
 
-                <!-- KHUNG PHIẾU TÔ ĐÁP ÁN (3 DẠNG) BÊN PHẢI -->
                 <div class="w-full md:w-1/2 p-4 overflow-y-auto h-1/2 md:h-full bg-white space-y-6">
-                  <h3 class="font-bold text-lg text-blue-800 border-b pb-2"><i class="fa-solid fa-list-check mr-2"></i>PHIẾU TẢI / TÔ ĐÁP ÁN</h3>
+                  <h3 class="font-bold text-lg text-blue-800 border-b pb-2"><i class="fa-solid fa-list-check mr-2"></i>PHIẾU TÔ ĐÁP ÁN</h3>
 
-                  <!-- DẠNG 1: TRẮC NGHIỆM 4 LỰA CHỌN -->
                   ${(exam.mcqCount > 0) ? `
                     <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                       <h4 class="font-bold text-sm text-blue-900 mb-3">PHẦN I. Câu hỏi trắc nghiệm (4 lựa chọn)</h4>
@@ -307,7 +350,6 @@
                     </div>
                   ` : ''}
 
-                  <!-- DẠNG 2: TRẮC NGHIỆM ĐÚNG / SAI -->
                   ${(exam.tfCount > 0) ? `
                     <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
                       <h4 class="font-bold text-sm text-amber-900 mb-3">PHẦN II. Câu hỏi trắc nghiệm Đúng / Sai</h4>
@@ -332,7 +374,6 @@
                     </div>
                   ` : ''}
 
-                  <!-- DẠNG 3: CÂU HỎI TRẢ LỜI NGẮN -->
                   ${(exam.saCount > 0) ? `
                     <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
                       <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN III. Câu hỏi trả lời ngắn</h4>
@@ -408,10 +449,10 @@
           </main>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI VỚI FILE ĐỀ + ĐÁP ÁN CHUẨN 3 DẠNG -->
+        <!-- MODAL TẠO ĐỀ THI VỚI HƯỚNG DẪN NHẬP ĐÁP ÁN GỐC -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra Mới (File Đề + Đáp Án)</h3>
+            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra Mới (Kèm Đáp Án Chuẩn)</h3>
             <form id="formAddExam" class="space-y-3 text-sm">
               <div>
                 <label class="block text-xs font-semibold mb-1">Tên bài kiểm tra</label>
@@ -426,32 +467,27 @@
                 <input type="file" id="examFileInput" required accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-gray-50">
               </div>
 
-              <!-- CẤU HÌNH SỐ LƯỢNG CÂU HỎI VÀ ĐÁP ÁN CHUẨN -->
               <div class="border p-3 rounded bg-gray-50 space-y-2">
-                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Cấu hình cấu trúc câu hỏi:</span>
+                <span class="font-bold text-xs text-gray-700 block border-b pb-1">Cấu hình câu hỏi & Đáp án gốc để chấm điểm tự động:</span>
                 
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] font-semibold">Số câu TN 4 Lựa chọn</label>
                     <input type="number" id="mcqCount" value="12" class="w-full p-1.5 border rounded text-xs">
                   </div>
                   <div>
-                    <label class="block text-[10px] font-semibold">Số câu Đúng/Sai</label>
-                    <input type="number" id="tfCount" value="4" class="w-full p-1.5 border rounded text-xs">
-                  </div>
-                  <div>
                     <label class="block text-[10px] font-semibold">Số câu Trả lời ngắn</label>
-                    <input type="number" id="saCount" value="6" class="w-full p-1.5 border rounded text-xs">
+                    <input type="number" id="saCount" value="4" class="w-full p-1.5 border rounded text-xs">
                   </div>
                 </div>
 
                 <div>
-                  <label class="block text-[10px] font-semibold mt-2">Đáp án chuẩn Trắc nghiệm 4 lựa chọn (Ví dụ: 1A,2B,3C...)</label>
-                  <input type="text" id="mcqKey" placeholder="A,B,C,D,A,B..." class="w-full p-1.5 border rounded text-xs">
+                  <label class="block text-[10px] font-semibold mt-1">Đáp án trắc nghiệm (Phân cách bằng dấu phẩy theo thứ tự câu 1,2,3...)</label>
+                  <input type="text" id="mcqKey" placeholder="Ví dụ: A,B,C,D,A,B,C,D,A,B,C,D" class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold">Đáp án chuẩn Trả lời ngắn (phân cách bằng dấu phẩy)</label>
-                  <input type="text" id="saKey" placeholder="12, -5, 3.5..." class="w-full p-1.5 border rounded text-xs">
+                  <label class="block text-[10px] font-semibold">Đáp án trả lời ngắn (Phân cách bằng dấu phẩy)</label>
+                  <input type="text" id="saKey" placeholder="Ví dụ: 12, -5, 3.5, 0" class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
               </div>
 
@@ -488,7 +524,7 @@
                 duration: Number(document.getElementById('examDuration').value),
                 fileUrl: uploadEvent.target.result,
                 mcqCount: Number(document.getElementById('mcqCount').value),
-                tfCount: Number(document.getElementById('tfCount').value),
+                tfCount: 0,
                 saCount: Number(document.getElementById('saCount').value),
                 mcqKey: document.getElementById('mcqKey').value,
                 saKey: document.getElementById('saKey').value
@@ -506,7 +542,6 @@
       }
     }
 
-    // CÁC HÀM XỬ LÝ CHỌN ĐÁP ÁN CỦA HỌC SINH
     function selectMCQ(qNum, val) {
       myAppState.userAnswers.mcq[qNum] = val;
       renderUI();
@@ -568,7 +603,7 @@
       let totalCorrect = 0;
       let totalQuestions = (exam.mcqCount || 0) + (exam.saCount || 0);
 
-      // Chấm trắc nghiệm 4 lựa chọn
+      // Đối chiếu đáp án trắc nghiệm
       const mcqKeys = (exam.mcqKey || '').split(',').map(k => k.trim().toUpperCase());
       for (let i = 1; i <= exam.mcqCount; i++) {
         if (myAppState.userAnswers.mcq[i] && myAppState.userAnswers.mcq[i] === mcqKeys[i-1]) {
@@ -576,7 +611,7 @@
         }
       }
 
-      // Chấm trả lời ngắn
+      // Đối chiếu đáp án trả lời ngắn
       const saKeys = (exam.saKey || '').split(',').map(k => k.trim());
       for (let i = 1; i <= exam.saCount; i++) {
         if (myAppState.userAnswers.sa[i] && myAppState.userAnswers.sa[i] === saKeys[i-1]) {
@@ -594,7 +629,7 @@
       };
 
       db.ref('submissions').push(subData);
-      myAppState.resultObj = { finalScore };
+      myAppState.resultObj = { finalScore, correctCount: totalCorrect, totalQuestions };
       renderUI();
     }
 
@@ -642,7 +677,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{
-              parts: [{ text: "Bạn là trợ giảng môn Toán THCS/THPT. Hãy hướng dẫn câu hỏi: " + text }]
+              parts: [{ text: "Bạn là trợ giảng môn Toán. Hãy hướng dẫn câu hỏi: " + text }]
             }]
           })
         });
