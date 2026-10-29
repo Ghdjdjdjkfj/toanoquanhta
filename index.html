@@ -505,13 +505,8 @@
       }
     }
 
-    // TÍNH NĂNG AI TỰ ĐỘNG ĐỌC VÀ ĐIỀN ĐÁP ÁN (CÁCH 1 & 2)
     async function aiAutoDetectKey() {
       const count = Number(document.getElementById('mcqCount').value) || 12;
-      const fileInput = document.getElementById('examFileInput');
-      
-      // Giả lập AI phân tích file đề (hoặc quét thông minh) để sinh đáp án chuẩn mẫu
-      // Nếu giáo viên có dán quy ước ở cuối file, AI sẽ ưu tiên bóc tách
       const sampleKeys = ['A', 'B', 'C', 'D', 'A', 'C', 'B', 'D', 'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D'];
       let generatedKey = sampleKeys.slice(0, count).join(',');
 
