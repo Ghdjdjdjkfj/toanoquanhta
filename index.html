@@ -93,7 +93,8 @@
       userAnswers: { mcq: {}, tf: {}, sa: {} },
       timeRemaining: 0,
       resultObj: null,
-      timerRef: null
+      timerRef: null,
+      tetTimerInterval: null
     };
 
     function bootApp() {
@@ -117,6 +118,93 @@
         myAppState.submissions = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })).reverse() : [];
         renderUI();
       });
+    }
+
+    const tetWishes = [
+      "Chúc năm mới vạn sự như ý, tỷ sự như mơ, làm việc như thơ, đời vui như nhạc!",
+      "Năm mới phát tài phát lộc, gia đình hạnh phúc, an khang thịnh vượng!",
+      "Chúc bạn học tập chăm chỉ, thi đâu đậu đấy, điểm số cao vút như diều gặp gió!",
+      "Sang năm mới chúc mọi dự định đều thành hiện thực, luôn tràn đầy năng lượng tích cực!",
+      "Cung chúc tân niên một chữ nhàn, chúc mừng gia quyến đặng bình an!",
+      "Chúc nhà nhà hòa thuận, người người hạnh phúc, tài lộc đầy nhà, xuân sang đắc lộc!",
+      "Năm mới gặt hái thật nhiều thành công mới, vượt mọi thử thách, chạm tay đến ước mơ!"
+    ];
+
+    function getDailyTetWish() {
+      const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+      return tetWishes[dayOfYear % tetWishes.length];
+    }
+
+    // TÍNH NGÀY LỄ GẦN NHẤT
+    function getNextHoliday() {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+
+      const holidays = [
+        { name: "Ngày Nhà giáo Việt Nam (20/11)", month: 11, day: 20 },
+        { name: "Tết Dương Lịch (01/01)", month: 1, day: 1 },
+        { name: "Ngày Giải phóng Miền Nam (30/04)", month: 4, day: 30 },
+        { name: "Ngày Quốc tế Lao động (01/05)", month: 5, day: 1 },
+        { name: "Ngày Quốc khánh (02/09)", month: 9, day: 2 },
+        { name: "Ngày Phụ nữ Việt Nam (20/10)", month: 10, day: 20 }
+      ];
+
+      let upcoming = null;
+      let minDiff = Infinity;
+
+      holidays.forEach(h => {
+        let hDate = new Date(currentYear, h.month - 1, h.day);
+        if (hDate < now) {
+          hDate = new Date(currentYear + 1, h.month - 1, h.day);
+        }
+        const diff = hDate - now;
+        if (diff < minDiff) {
+          minDiff = diff;
+          upcoming = { name: h.name, date: hDate, diffDays: Math.ceil(diff / (1000 * 60 * 60 * 24)) };
+        }
+      });
+
+      return upcoming;
+    }
+
+    // ĐỒNG HỒ ĐẾM NGƯỢC TẾT 2027 VÀ TỰ ĐỘNG BÁO NGÀY LỄ
+    function startTetCountdown() {
+      if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
+      
+      // Mùng 1 Tết Đinh Mùi 2027 (06/02/2027)
+      const tet2027Date = new Date('2027-02-06T00:00:00');
+
+      function updateTimer() {
+        const now = new Date();
+        const diff = tet2027Date - now;
+
+        const countdownEl = document.getElementById('tetCountdownDisplay');
+        const holidayEl = document.getElementById('holidayCountdownDisplay');
+        if (!countdownEl) return;
+
+        // 1. Đếm ngược Giờ, Phút, Giây Tết 2027
+        if (diff <= 0 && diff > -86400000 * 3) {
+          countdownEl.innerHTML = `<span class="text-yellow-300 font-bold animate-bounce">🧧 CHÚC MỪNG NĂM MỚI 2027 (ĐINH MÙI)!</span> Vạn sự như ý - An khang thịnh vượng!`;
+        } else {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+          countdownEl.innerHTML = `⏳ Đếm ngược Tết Đinh Mùi 2027: <b class="text-yellow-200">${days} ngày ${hours} giờ ${minutes} phút ${seconds} giây</b> (Mùng 1: 06/02/2027)`;
+        }
+
+        // 2. Cập nhật ngày lễ gần nhất
+        if (holidayEl) {
+          const nextH = getNextHoliday();
+          if (nextH) {
+            holidayEl.innerHTML = `🎉 Sự kiện tiếp theo: <b class="text-amber-200">${nextH.name}</b> - còn <b class="text-yellow-300">${nextH.diffDays} ngày</b> nữa!`;
+          }
+        }
+      }
+
+      updateTimer();
+      myAppState.tetTimerInterval = setInterval(updateTimer, 1000);
     }
 
     function renderUI() {
@@ -180,6 +268,22 @@
         });
 
         mainArea = `
+          <!-- BANNER ĐẾM NGƯỢC TẾT 2027 VÀ BÁO NGÀY LỄ LỚN -->
+          <div id="tetBannerContent" class="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white p-4 rounded-2xl shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-3 border border-red-400">
+            <div class="space-y-1.5 text-center md:text-left">
+              <div class="text-[11px] uppercase tracking-widest text-yellow-200 font-bold flex items-center justify-center md:justify-start gap-1">
+                <i class="fa-solid fa-seedling"></i> Chào xuân Đinh Mùi 2027
+              </div>
+              <div id="tetCountdownDisplay" class="text-sm md:text-base font-bold">Đang tải đồng hồ đếm ngược...</div>
+              <div id="holidayCountdownDisplay" class="text-xs text-yellow-100 font-medium">Đang tính sự kiện tiếp theo...</div>
+              <div class="text-xs text-red-100 italic pt-1 border-t border-red-400/50"><i class="fa-solid fa-quote-left mr-1"></i> ${getDailyTetWish()}</div>
+            </div>
+            <div class="bg-black/20 px-4 py-2.5 rounded-xl text-center border border-white/20 shrink-0">
+              <span class="text-[10px] uppercase block text-yellow-300 font-bold">Mùng 1 Tết 2027</span>
+              <span class="text-sm font-bold">06/02/2027</span>
+            </div>
+          </div>
+
           <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
             <div class="flex gap-2 overflow-x-auto pb-2">
               ${subjects.map(s => `<button onclick="pickSubject('${s}')" class="px-3 py-1.5 rounded text-sm font-medium ${myAppState.selectedSubject === s ? 'bg-blue-600 text-white' : 'bg-white border'}">${s}</button>`).join('')}
@@ -213,6 +317,7 @@
             </div>
           `}
         `;
+        setTimeout(startTetCountdown, 50);
       }
 
       else if (myAppState.view === 'exam_list') {
@@ -255,7 +360,6 @@
 
             ${myAppState.resultObj ? `
               <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                <!-- KHUNG ĐIỂM SỐ VÀ AI NHẬN XÉT -->
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200 max-w-2xl mx-auto shadow-sm space-y-4">
                   <div class="text-center">
                     <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
@@ -277,7 +381,6 @@
                   </div>
                 </div>
 
-                <!-- BẢNG TRA CỨU ĐÁP ÁN CHI TIẾT -->
                 <div class="max-w-3xl mx-auto space-y-4">
                   <h3 class="font-bold text-base text-gray-800 border-b pb-2"><i class="fa-solid fa-key mr-2"></i>Bảng tra cứu đáp án chi tiết:</h3>
                   
@@ -515,7 +618,7 @@
           </div>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI (CẢI TIẾN NHẬP DẤU CHẤM PHẨY PHÂN CÁCH CÂU) -->
+        <!-- MODAL TẠO ĐỀ THI -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra Mới</h3>
@@ -626,7 +729,6 @@
             const file = fileInput.files[0];
             const reader = new FileReader();
             reader.onload = function(uploadEvent) {
-              // Tách đáp án Đúng/Sai theo từng câu (dấu ;)
               const tfGroup = document.getElementById('tfKey').value.split(';').map(g => g.trim());
               let tfKeys = [];
               const tfCount = Number(document.getElementById('tfCount').value) || 0;
@@ -664,7 +766,6 @@
       }
     }
 
-    // HÀM HỖ TRỢ TÁCH ĐÁP ÁN THEO DẤU CHẤM PHẨY HOẶC DẤU PHẨY MỘT CÁCH THÔNG MINH
     function parseKeys(str) {
       if (!str) return [];
       if (str.includes(';')) {
@@ -673,7 +774,6 @@
       return str.split(',').map(s => s.trim());
     }
 
-    // HÀM CHUẨN HÓA CHUỖI ĐỂ SO SÁNH ĐÚNG/SAI CHÍNH XÁC (KHÔNG BỊ LỖI KHOẢNG TRẮNG, DẤU PHẨY/CHẤM)
     function cleanStr(val) {
       if (!val) return '';
       return val.toString().trim().replace(/\s+/g, '').replace('.', ',').toUpperCase();
@@ -685,12 +785,18 @@
 
     function navTo(v) { 
       if (myAppState.timerRef) clearInterval(myAppState.timerRef);
+      if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
       myAppState.view = v; 
       renderUI(); 
     }
     function pickSubject(s) { myAppState.selectedSubject = s; renderUI(); }
     function pickChapter(c) { myAppState.selectedChapter = c; renderUI(); }
-    function logOut() { if(myAppState.timerRef) clearInterval(myAppState.timerRef); myAppState.currentUser = null; renderUI(); }
+    function logOut() { 
+      if(myAppState.timerRef) clearInterval(myAppState.timerRef); 
+      if(myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
+      myAppState.currentUser = null; 
+      renderUI(); 
+    }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function deleteStudent(id) { if(confirm('Xóa học sinh này?')) db.ref('students/' + id).remove(); }
@@ -730,7 +836,6 @@
       let totalCorrect = 0;
       let totalItems = (exam.mcqCount || 0) + ((exam.tfCount || 0) * 4) + (exam.saCount || 0);
 
-      // 1. Chấm Trắc nghiệm 4 lựa chọn
       const mcqKeys = parseKeys(exam.mcqKey);
       for (let i = 1; i <= exam.mcqCount; i++) {
         if (myAppState.userAnswers.mcq[i] && cleanStr(myAppState.userAnswers.mcq[i]) === cleanStr(mcqKeys[i-1])) {
@@ -738,7 +843,6 @@
         }
       }
 
-      // 2. Chấm Đúng / Sai
       for (let i = 1; i <= (exam.tfCount || 0); i++) {
         ['a', 'b', 'c', 'd'].forEach(sub => {
           const uVal = myAppState.userAnswers.tf[`${i}_${sub}`];
@@ -749,7 +853,6 @@
         });
       }
 
-      // 3. Chấm Trả lời ngắn
       const saKeys = parseKeys(exam.saKey);
       for (let i = 1; i <= exam.saCount; i++) {
         if (myAppState.userAnswers.sa[i] && cleanStr(myAppState.userAnswers.sa[i]) === cleanStr(saKeys[i-1])) {
@@ -759,7 +862,6 @@
 
       const finalScore = totalItems > 0 ? Number(((totalCorrect / totalItems) * 10).toFixed(1)) : 10;
 
-      // AI Nhận xét & Lời chúc dựa trên kết quả
       let aiComment = "";
       let aiWish = "";
       if (finalScore >= 9) {
