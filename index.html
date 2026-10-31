@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tài Liệu Ôn Tập & Kiểm Tra Online - Toán 9</title>
+  <title>Tài Liệu Ôn Tập & Ngân Hàng Đề Thi - Toán 9</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -87,6 +87,7 @@
       selectedChapter: 'Tất cả',
       lectures: [],
       exams: [],
+      questions: [],
       students: [],
       submissions: [],
       activeExam: null,
@@ -108,6 +109,11 @@
         myAppState.exams = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
         renderUI();
       });
+      db.ref('questions').on('value', snap => {
+        const d = snap.val();
+        myAppState.questions = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        renderUI();
+      });
       db.ref('students').on('value', snap => {
         const d = snap.val();
         myAppState.students = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
@@ -120,25 +126,25 @@
       });
     }
 
-    const tetWishes = [
-      "Chúc năm mới vạn sự như ý, tỷ sự như mơ, làm việc như thơ, đời vui như nhạc!",
-      "Năm mới phát tài phát lộc, gia đình hạnh phúc, an khang thịnh vượng!",
-      "Chúc bạn học tập chăm chỉ, thi đâu đậu đấy, điểm số cao vút như diều gặp gió!",
-      "Sang năm mới chúc mọi dự định đều thành hiện thực, luôn tràn đầy năng lượng tích cực!",
-      "Cung chúc tân niên một chữ nhàn, chúc mừng gia quyến đặng bình an!",
-      "Chúc nhà nhà hòa thuận, người người hạnh phúc, tài lộc đầy nhà, xuân sang đắc lộc!",
-      "Năm mới gặt hái thật nhiều thành công mới, vượt mọi thử thách, chạm tay đến ước mơ!"
+    // CÂU CHÚC HỌC TẬP & ĐỘNG LỰC MỖI NGÀY (THAY CHO CHÚC TẾT)
+    const studyWishes = [
+      "Học, học nữa, học mãi! Thành công luôn đến với những ai kiên trì ôn luyện mỗi ngày.",
+      "Kiến thức là sức mạnh. Chúc bạn hôm nay tiếp thu thật nhiều điều mới mẻ và bổ ích!",
+      "Mỗi bài toán giải được là một bước tiến gần hơn đến ước mơ và cánh cửa trường chuyên lớp chọn!",
+      "Không có con đường nào ngắn nhất dẫn đến thành công ngoài sự nỗ lực và tự học.",
+      "Hãy làm những việc khó khi chúng còn dễ, làm những việc lớn khi chúng còn nhỏ. Cố lên!",
+      "Toán học rèn luyện tư duy logic. Chúc bạn luôn giữ vững phong độ và sự tập trung cao độ!",
+      "Sự chuẩn bị vững chắc hôm nay chính là tấm vé thông hành cho kỳ thi tuyệt vời ngày mai!"
     ];
 
-    function getDailyTetWish() {
+    function getDailyStudyWish() {
       const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-      return tetWishes[dayOfYear % tetWishes.length];
+      return studyWishes[dayOfYear % studyWishes.length];
     }
 
     function getNextHoliday() {
       const now = new Date();
       const currentYear = now.getFullYear();
-
       const holidays = [
         { name: "Ngày Nhà giáo Việt Nam (20/11)", month: 11, day: 20 },
         { name: "Tết Dương Lịch (01/01)", month: 1, day: 1 },
@@ -150,37 +156,31 @@
 
       let upcoming = null;
       let minDiff = Infinity;
-
       holidays.forEach(h => {
         let hDate = new Date(currentYear, h.month - 1, h.day);
-        if (hDate < now) {
-          hDate = new Date(currentYear + 1, h.month - 1, h.day);
-        }
+        if (hDate < now) hDate = new Date(currentYear + 1, h.month - 1, h.day);
         const diff = hDate - now;
         if (diff < minDiff) {
           minDiff = diff;
           upcoming = { name: h.name, date: hDate, diffDays: Math.ceil(diff / (1000 * 60 * 60 * 24)) };
         }
       });
-
       return upcoming;
     }
 
     function startTetCountdown() {
       if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
-      
       const tet2027Date = new Date('2027-02-06T00:00:00');
 
       function updateTimer() {
         const now = new Date();
         const diff = tet2027Date - now;
-
         const boxesEl = document.getElementById('tetCountdownBoxes');
         const holidayEl = document.getElementById('holidayCountdownDisplay');
         if (!boxesEl) return;
 
-        if (diff <= 0 && diff > -86400000 * 3) {
-          boxesEl.innerHTML = `<div class="text-yellow-300 font-bold text-lg animate-bounce py-2">🧧 CHÚC MỪNG NĂM MỚI 2027 (ĐINH MÙI)! Vạn sự như ý!</div>`;
+        if (diff <= 0) {
+          boxesEl.innerHTML = `<div class="text-yellow-300 font-bold text-lg py-2">🧧 Chúc mừng năm mới 2027! Gặt hái điểm 10 rực rỡ!</div>`;
         } else {
           const days = Math.floor(diff / (1000 * 60 * 60 * 24));
           const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -190,31 +190,23 @@
           boxesEl.innerHTML = `
             <div class="flex items-center gap-2 sm:gap-3 my-1">
               <div class="flex flex-col items-center">
-                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
-                  ${String(days).padStart(2, '0')}
-                </div>
-                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Ngày</span>
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(days).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Ngày</span>
               </div>
-              <span class="text-yellow-300 font-bold text-lg sm:text-xl pb-4">:</span>
+              <span class="text-yellow-300 font-bold text-lg pb-4">:</span>
               <div class="flex flex-col items-center">
-                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
-                  ${String(hours).padStart(2, '0')}
-                </div>
-                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Giờ</span>
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(hours).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Giờ</span>
               </div>
-              <span class="text-yellow-300 font-bold text-lg sm:text-xl pb-4">:</span>
+              <span class="text-yellow-300 font-bold text-lg pb-4">:</span>
               <div class="flex flex-col items-center">
-                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
-                  ${String(minutes).padStart(2, '0')}
-                </div>
-                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Phút</span>
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(minutes).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Phút</span>
               </div>
-              <span class="text-yellow-300 font-bold text-lg sm:text-xl pb-4">:</span>
+              <span class="text-yellow-300 font-bold text-lg pb-4">:</span>
               <div class="flex flex-col items-center">
-                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md min-w-[48px] sm:min-w-[60px] text-center font-mono">
-                  ${String(seconds).padStart(2, '0')}
-                </div>
-                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold tracking-wider">Giây</span>
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(seconds).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Giây</span>
               </div>
             </div>
           `;
@@ -222,14 +214,26 @@
 
         if (holidayEl) {
           const nextH = getNextHoliday();
-          if (nextH) {
-            holidayEl.innerHTML = `🎉 Sự kiện tiếp theo: <b class="text-amber-200">${nextH.name}</b> - còn <b class="text-yellow-300 font-bold">${nextH.diffDays} ngày</b>!`;
-          }
+          if (nextH) holidayEl.innerHTML = `🎉 Sự kiện tiếp theo: <b class="text-amber-200">${nextH.name}</b> - còn <b class="text-yellow-300 font-bold">${nextH.diffDays} ngày</b>!`;
         }
       }
-
       updateTimer();
       myAppState.tetTimerInterval = setInterval(updateTimer, 1000);
+    }
+
+    // XUẤT FILE NGÂN HÀNG CÂU HỎI
+    function exportQuestionBank() {
+      if (myAppState.questions.length === 0) {
+        alert('Ngân hàng câu hỏi trống!');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(myAppState.questions, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "NganHangCauHoi_Toan9.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
     }
 
     function renderUI() {
@@ -240,7 +244,7 @@
           <div class="min-h-screen bg-blue-600 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
               <h1 class="text-2xl font-bold text-center mb-1 text-gray-800">Tài Liệu Ôn Tập THCS & THPT</h1>
-              <p class="text-center text-sm text-gray-500 mb-6">Hệ thống thi online chuẩn mới</p>
+              <p class="text-center text-sm text-gray-500 mb-6">Hệ thống thi online & Ngân hàng câu hỏi</p>
               <form id="loginForm" class="space-y-4">
                 <div>
                   <label class="block text-xs font-semibold mb-1">Tên đăng nhập</label>
@@ -274,6 +278,7 @@
       let navButtons = `
         <button onclick="navTo('home')" class="hover:underline font-semibold">Thư mục</button>
         <button onclick="navTo('exam_list')" class="hover:underline font-semibold">Kiểm tra</button>
+        <button onclick="navTo('question_bank')" class="hover:underline font-semibold">Ngân hàng câu hỏi</button>
       `;
       if (myAppState.currentUser.role === 'admin') {
         navButtons += `
@@ -293,18 +298,19 @@
         });
 
         mainArea = `
-          <div id="tetBannerContent" class="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white p-4 sm:p-5 rounded-2xl shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-red-400">
+          <!-- BANNER ĐỘNG LỰC & ĐẾM NGƯỢC -->
+          <div id="tetBannerContent" class="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600 text-white p-4 sm:p-5 rounded-2xl shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-blue-400">
             <div class="space-y-2 text-center md:text-left flex-1">
-              <div class="text-[11px] uppercase tracking-widest text-yellow-200 font-bold flex items-center justify-center md:justify-start gap-1">
-                <i class="fa-solid fa-seedling"></i> Chào xuân Đinh Mùi 2027
+              <div class="text-[11px] uppercase tracking-widest text-yellow-300 font-bold flex items-center justify-center md:justify-start gap-1">
+                <i class="fa-solid fa-graduation-cap"></i> Góc Học Tập & Động Lực Mỗi Ngày
               </div>
               <div id="tetCountdownBoxes" class="flex justify-center md:justify-start"></div>
-              <div id="holidayCountdownDisplay" class="text-xs text-yellow-100 font-medium">Đang tính sự kiện tiếp theo...</div>
-              <div class="text-xs text-red-100 italic pt-1 border-t border-red-400/50"><i class="fa-solid fa-quote-left mr-1"></i> ${getDailyTetWish()}</div>
+              <div id="holidayCountdownDisplay" class="text-xs text-blue-100 font-medium">Đang tính sự kiện tiếp theo...</div>
+              <div class="text-xs text-yellow-100 italic pt-1 border-t border-blue-400/50"><i class="fa-solid fa-quote-left mr-1"></i> ${getDailyStudyWish()}</div>
             </div>
             <div class="bg-black/30 p-3 sm:p-4 rounded-2xl text-center border border-white/20 shrink-0 shadow-inner">
-              <span class="text-[10px] uppercase block text-yellow-300 font-bold tracking-wider">Mùng 1 Tết 2027</span>
-              <span class="text-base sm:text-lg font-black text-white">06/02/2027</span>
+              <span class="text-[10px] uppercase block text-yellow-300 font-bold tracking-wider">Mục tiêu ôn thi</span>
+              <span class="text-base sm:text-lg font-black text-white">Điểm 10 Trong Tầm Tay</span>
             </div>
           </div>
 
@@ -351,4 +357,757 @@
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
             ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi Mới</button>` : ''}
           </div>
-          ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py
+          ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${myAppState.exams.map(e => `
+                <div class="bg-white p-4 rounded shadow border flex justify-between items-center">
+                  <div>
+                    <h3 class="font-bold text-blue-700">${e.title}</h3>
+                    <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} TN - ${e.tfCount || 0} Đ/S - ${e.saCount || 0} Ngắn</p>
+                    <div class="flex gap-3 mt-2 text-xs">
+                      ${e.fileUrl ? `<a href="${e.fileUrl}" download="DeThi" class="text-blue-600 hover:underline font-semibold"><i class="fa-solid fa-file-pdf mr-1"></i>Tải đề thi</a>` : ''}
+                      ${e.solutionUrl ? `<a href="${e.solutionUrl}" download="DapAnChiTiet" class="text-green-600 hover:underline font-semibold"><i class="fa-solid fa-file-lines mr-1"></i>Tải đáp án chi tiết</a>` : ''}
+                      ${e.videoUrl ? `<a href="${e.videoUrl}" target="_blank" class="text-red-600 hover:underline font-semibold"><i class="fa-solid fa-video mr-1"></i>Video bài giảng</a>` : ''}
+                    </div>
+                  </div>
+                  <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700 shrink-0"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        `;
+      }
+
+      else if (myAppState.view === 'question_bank') {
+        mainArea = `
+          <div class="bg-white p-6 rounded-xl shadow space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+              <div>
+                <h2 class="text-xl font-bold text-blue-800"><i class="fa-solid fa-database mr-2"></i>Ngân Hàng Câu Hỏi Số Hóa</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Quản lý và xuất dữ liệu câu hỏi ôn tập</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="exportQuestionBank()" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-indigo-700"><i class="fa-solid fa-file-export mr-1.5"></i> Xuất File Ngân Hàng (.json)</button>
+                ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalQuestion')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Thêm Câu Hỏi</button>` : ''}
+              </div>
+            </div>
+
+            ${myAppState.questions.length === 0 ? `<p class="text-center text-gray-500 py-10">Ngân hàng câu hỏi chưa có dữ liệu.</p>` : `
+              <div class="space-y-3">
+                ${myAppState.questions.map((q, idx) => `
+                  <div class="p-4 border rounded-xl bg-gray-50 flex justify-between items-start text-xs">
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">Câu ${idx+1}</span>
+                        <span class="text-gray-500 font-medium">${q.chapter || 'Chung'}</span>
+                        <span class="text-indigo-600 font-semibold">[${q.type || 'TN'}]</span>
+                      </div>
+                      <p class="font-bold text-gray-800 text-sm mt-1">${q.content}</p>
+                      <p class="text-green-700 font-semibold">Đáp án: ${q.correct}</p>
+                    </div>
+                    ${myAppState.currentUser.role === 'admin' ? `<button onclick="deleteQuestion('${q.id}')" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      else if (myAppState.view === 'do_exam' && myAppState.activeExam) {
+        const exam = myAppState.activeExam;
+        const mm = Math.floor(myAppState.timeRemaining / 60);
+        const ss = myAppState.timeRemaining % 60;
+
+        mainArea = `
+          <div class="bg-white rounded shadow-lg overflow-hidden flex flex-col h-[calc(100vh-100px)]">
+            <div class="bg-blue-600 text-white p-3 flex justify-between items-center shrink-0">
+              <h2 class="font-bold text-base truncate"><i class="fa-solid fa-file-signature mr-2"></i>${exam.title}</h2>
+              ${!myAppState.resultObj ? `
+                <div class="bg-red-500 text-white font-bold px-3 py-1 rounded text-sm shadow animate-pulse">
+                  <i class="fa-solid fa-clock mr-1"></i> ${mm}:${ss.toString().padStart(2, '0')}
+                </div>
+              ` : `<div class="bg-green-600 text-white font-bold px-3 py-1 rounded text-sm">Đã nộp bài</div>`}
+            </div>
+
+            ${myAppState.resultObj ? `
+              <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200 max-w-2xl mx-auto shadow-sm space-y-4">
+                  <div class="text-center">
+                    <div class="text-5xl font-bold text-blue-600 mb-2">${myAppState.resultObj.finalScore} <span class="text-xl text-gray-500">/ 10 điểm</span></div>
+                    <p class="text-gray-700 text-sm">Bạn trả lời đúng ${myAppState.resultObj.correctCount} / ${myAppState.resultObj.totalQuestions} phần câu hỏi.</p>
+                  </div>
+
+                  <div class="bg-white p-4 rounded-xl border border-blue-100 text-xs space-y-2">
+                    <div class="font-bold text-blue-800 flex items-center gap-1.5 text-sm">
+                      <i class="fa-solid fa-robot text-blue-600"></i> AI Nhận xét & Đánh giá năng lực:
+                    </div>
+                    <p class="text-gray-700 leading-relaxed italic">${myAppState.resultObj.aiComment}</p>
+                    <div class="pt-2 border-t text-indigo-700 font-semibold flex items-center gap-1.5">
+                      <i class="fa-solid fa-heart text-red-500"></i> Lời chúc từ hệ thống: "${myAppState.resultObj.aiWish}"
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap justify-center gap-3 pt-2">
+                    ${exam.solutionUrl ? `<a href="${exam.solutionUrl}" download="DapAnChiTiet" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 text-xs shadow"><i class="fa-solid fa-download mr-1"></i> Tải đáp án chi tiết</a>` : ''}
+                    ${exam.videoUrl ? `<a href="${exam.videoUrl}" target="_blank" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 text-xs shadow"><i class="fa-solid fa-video mr-1"></i> Xem video bài giảng / chữa đề</a>` : ''}
+                    <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 text-xs shadow">Quay lại danh sách</button>
+                  </div>
+                </div>
+
+                <div class="max-w-3xl mx-auto space-y-4">
+                  <h3 class="font-bold text-base text-gray-800 border-b pb-2"><i class="fa-solid fa-key mr-2"></i>Bảng tra cứu đáp án chi tiết:</h3>
+                  
+                  ${exam.mcqCount > 0 ? `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                      <h4 class="font-bold text-xs text-blue-800 mb-3 uppercase">Phần I. Trắc nghiệm 4 lựa chọn</h4>
+                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        ${Array.from({length: exam.mcqCount}).map((_, i) => {
+                          const userAns = myAppState.userAnswers.mcq[i+1] || '(Chưa chọn)';
+                          const correctAns = parseKeys(exam.mcqKey)[i] || '?';
+                          const isCorrect = cleanStr(userAns) === cleanStr(correctAns);
+                          return `
+                            <div class="p-2 rounded border ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
+                              <span class="font-bold">Câu ${i+1}:</span> Bạn: <b class="${isCorrect ? 'text-green-700' : 'text-red-700'}">${userAns}</b> | Đáp án: <b>${correctAns}</b>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  ${exam.tfCount > 0 ? `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                      <h4 class="font-bold text-xs text-amber-800 mb-3 uppercase">Phần II. Trắc nghiệm Đúng / Sai</h4>
+                      <div class="space-y-2 text-xs">
+                        ${Array.from({length: exam.tfCount}).map((_, i) => `
+                          <div class="p-2.5 rounded border bg-gray-50">
+                            <span class="font-bold block mb-1">Câu ${i+1}:</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              ${['a','b','c','d'].map(sub => {
+                                const uVal = myAppState.userAnswers.tf[`${i+1}_${sub}`] || '-';
+                                const cVal = exam.tfKeys?.[i]?.[sub] || '?';
+                                const ok = cleanStr(uVal) === cleanStr(cVal);
+                                return `<div class="p-1.5 rounded border ${ok ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">${sub}) Bạn: <b>${uVal}</b> | Chuẩn: <b>${cVal}</b></div>`;
+                              }).join('')}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  ${exam.saCount > 0 ? `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                      <h4 class="font-bold text-xs text-indigo-800 mb-3 uppercase">Phần III. Trả lời ngắn</h4>
+                      <div class="space-y-2 text-xs">
+                        ${Array.from({length: exam.saCount}).map((_, i) => {
+                          const userAns = myAppState.userAnswers.sa[i+1] || '(Trống)';
+                          const correctAns = parseKeys(exam.saKey)[i] || '?';
+                          const isCorrect = cleanStr(userAns) === cleanStr(correctAns);
+                          return `
+                            <div class="p-2 rounded border flex justify-between items-center ${isCorrect ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}">
+                              <span><b>Câu ${i+1}:</b> Bạn nhập: "<b>${userAns}</b>"</span>
+                              <span>Đáp án chuẩn: <b class="text-blue-700">"${correctAns}"</b></span>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            ` : `
+              <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                <div class="w-full md:w-1/2 bg-gray-200 border-r flex flex-col h-1/2 md:h-full relative no-select" oncontextmenu="return false;">
+                  <div class="bg-gray-700 text-white text-xs px-3 py-1.5 flex justify-between items-center">
+                    <span><i class="fa-solid fa-eye mr-1"></i> Khung xem đề thi (Chỉ xem)</span>
+                    <span class="text-[10px] bg-red-600 px-1.5 py-0.5 rounded">Bảo mật đề</span>
+                  </div>
+                  ${exam.fileUrl ? `
+                    <iframe src="${exam.fileUrl}#toolbar=0&navpanes=0&scrollbar=1" class="w-full h-full border-none"></iframe>
+                  ` : `<div class="p-8 text-center text-gray-500">Không có file đề đính kèm.</div>`}
+                </div>
+
+                <div class="w-full md:w-1/2 p-4 overflow-y-auto h-1/2 md:h-full bg-white space-y-6">
+                  <h3 class="font-bold text-lg text-blue-800 border-b pb-2"><i class="fa-solid fa-list-check mr-2"></i>PHIẾU TÔ ĐÁP ÁN</h3>
+
+                  ${(exam.mcqCount > 0) ? `
+                    <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                      <h4 class="font-bold text-sm text-blue-900 mb-3">PHẦN I. Trắc nghiệm 4 lựa chọn</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${Array.from({length: exam.mcqCount}).map((_, i) => `
+                          <div class="flex items-center justify-between bg-white p-2 rounded border text-xs">
+                            <span class="font-bold text-gray-700 w-12">Câu ${i+1}:</span>
+                            <div class="flex gap-2">
+                              ${['A','B','C','D'].map(opt => `
+                                <button type="button" onclick="selectMCQ(${i+1}, '${opt}')" class="w-7 h-7 rounded-full font-bold border transition ${myAppState.userAnswers.mcq[i+1] === opt ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-gray-50 text-gray-700 hover:bg-gray-200'}">${opt}</button>
+                              `).join('')}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  ${(exam.tfCount > 0) ? `
+                    <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+                      <h4 class="font-bold text-sm text-amber-900 mb-3">PHẦN II. Trắc nghiệm Đúng / Sai</h4>
+                      <div class="space-y-3">
+                        ${Array.from({length: exam.tfCount}).map((_, i) => `
+                          <div class="bg-white p-2.5 rounded border text-xs">
+                            <div class="font-bold text-amber-800 mb-1">Câu ${i+1}:</div>
+                            <div class="grid grid-cols-2 gap-2">
+                              ${['a','b','c','d'].map(sub => `
+                                <div class="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+                                  <span class="font-semibold text-gray-600">${sub})</span>
+                                  <div class="flex gap-1">
+                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'Đ')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'Đ' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}">Đúng</button>
+                                    <button type="button" onclick="selectTF(${i+1}, '${sub}', 'S')" class="px-2 py-0.5 text-[10px] font-bold rounded border ${myAppState.userAnswers.tf[`${i+1}_${sub}`] === 'S' ? 'bg-red-600 text-white' : 'bg-white text-gray-700'}">Sai</button>
+                                  </div>
+                                </div>
+                              `).join('')}
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  ${(exam.saCount > 0) ? `
+                    <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                      <h4 class="font-bold text-sm text-indigo-900 mb-3">PHẦN III. Trả lời ngắn</h4>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${Array.from({length: exam.saCount}).map((_, i) => `
+                          <div class="bg-white p-2.5 rounded border text-xs flex items-center gap-2">
+                            <span class="font-bold text-indigo-800 shrink-0">Câu ${i+1}:</span>
+                            <input type="text" placeholder="Ví dụ: 3,5 hoặc -2" oninput="inputSA(${i+1}, this.value)" value="${myAppState.userAnswers.sa[i+1] || ''}" class="w-full p-1.5 border rounded outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <button onclick="finishExam()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-green-700 transition"><i class="fa-solid fa-paper-plane mr-2"></i>NỘP BÀI THI</button>
+                </div>
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      else if (myAppState.view === 'statistics') {
+        mainArea = `
+          <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-bold mb-4">Thống Kê Điểm Số Học Sinh</h2>
+            ${myAppState.submissions.length === 0 ? `<p class="text-gray-500 text-center py-6">Chưa có dữ liệu bài nộp.</p>` : `
+              <table class="w-full text-left text-sm border-collapse">
+                <thead><tr class="bg-gray-100 border-b"><th class="p-2">Học sinh</th><th class="p-2">Bài thi</th><th class="p-2">Điểm số</th><th class="p-2">Thời gian nộp</th></tr></thead>
+                <tbody>
+                  ${myAppState.submissions.map(s => `<tr class="border-b"><td class="p-2 font-semibold">${s.studentName}</td><td class="p-2">${s.examTitle}</td><td class="p-2 font-bold text-blue-600">${s.score}</td><td class="p-2 text-xs text-gray-500">${s.date}</td></tr>`).join('')}
+                </tbody>
+              </table>
+            `}
+          </div>
+        `;
+      }
+
+      else if (myAppState.view === 'admin_panel') {
+        mainArea = `
+          <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-bold mb-4">Quản Lý Tài Khoản Học Sinh</h2>
+            <form id="addStuForm" class="flex gap-2 mb-6">
+              <input type="text" id="stuUser" placeholder="Tên đăng nhập" required class="p-2 border rounded text-sm flex-1">
+              <input type="text" id="stuPass" placeholder="Mật khẩu" required class="p-2 border rounded text-sm flex-1">
+              <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold">Cấp TK</button>
+            </form>
+            <table class="w-full text-left text-sm border-collapse">
+              <thead><tr class="bg-gray-100 border-b"><th class="p-2">Tên đăng nhập</th><th class="p-2">Mật khẩu</th><th class="p-2 text-right">Thao tác</th></tr></thead>
+              <tbody>
+                ${myAppState.students.map(s => `<tr class="border-b"><td class="p-2 font-semibold">${s.username}</td><td class="p-2">${s.password}</td><td class="p-2 text-right"><button onclick="deleteStudent('${s.id}')" class="text-red-600 text-xs font-bold">Xóa</button></td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      rootDiv.innerHTML = `
+        <div class="min-h-screen flex flex-col">
+          <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow sticky top-0 z-40">
+            <div onclick="navTo('home')" class="font-bold text-lg cursor-pointer flex items-center gap-2">
+              <i class="fa-solid fa-graduation-cap"></i> Tài Liệu Ôn Tập THCS & THPT
+            </div>
+            <div class="flex items-center gap-4 text-sm font-medium">
+              ${navButtons}
+              <span class="bg-blue-700 px-3 py-1 rounded">${myAppState.currentUser.username}</span>
+              <button onclick="logOut()" class="text-red-200 hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></button>
+            </div>
+          </header>
+
+          <main class="max-w-6xl w-full mx-auto p-4 flex-1">
+            ${mainArea}
+          </main>
+        </div>
+
+        <!-- MODAL ĐĂNG BÀI GIẢNG -->
+        <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-lg">Đăng Bài Giảng Mới</h3>
+            <form id="formAddLec" class="space-y-3 text-sm">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Tên bài học</label>
+                <input type="text" id="lecTitle" required class="w-full p-2 border rounded">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Môn học</label>
+                  <select id="lecSubject" class="w-full p-2 border rounded bg-white">
+                    <option value="Toán 9">Toán 9</option>
+                    <option value="Toán 8">Toán 8</option>
+                    <option value="Toán 7">Toán 7</option>
+                    <option value="Đại số 10">Đại số 10</option>
+                    <option value="Hình học 11">Hình học 11</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Chương / Mục</label>
+                  <select id="lecChapter" class="w-full p-2 border rounded bg-white">
+                    ${chaptersListToan9.filter(c => c !== 'Tất cả').map(c => `<option value="${c}">${c}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">1. Chọn tệp tài liệu / lý thuyết (PDF, Word, Ảnh...)</label>
+                <input type="file" id="lecFileInput" class="w-full p-1.5 border rounded text-xs bg-gray-50">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">2. Link Video bài giảng (YouTube...)</label>
+                <input type="text" id="lecVideoInput" placeholder="https://youtube.com/..." class="w-full p-2 border rounded text-xs">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Mô tả bài học</label>
+                <textarea id="lecDesc" rows="2" class="w-full p-2 border rounded"></textarea>
+              </div>
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeModal('modalLec')" class="px-3 py-1.5 border rounded">Hủy</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded font-medium">Đăng Bài</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- MODAL THÊM CÂU HỎI VÀO NGÂN HÀNG -->
+        <div id="modalQuestion" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-lg text-blue-800">Thêm Câu Hỏi Vào Ngân Hàng</h3>
+            <form id="formAddQuestion" class="space-y-3 text-sm">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Chương / Chuyên đề</label>
+                <select id="qChapter" class="w-full p-2 border rounded bg-white">
+                  ${chaptersListToan9.filter(c => c !== 'Tất cả').map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Loại câu hỏi</label>
+                <select id="qType" class="w-full p-2 border rounded bg-white">
+                  <option value="Trắc nghiệm">Trắc nghiệm</option>
+                  <option value="Đúng/Sai">Đúng/Sai</option>
+                  <option value="Trả lời ngắn">Trả lời ngắn</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Nội dung câu hỏi</label>
+                <textarea id="qContent" rows="3" required placeholder="Nhập đề bài câu hỏi..." class="w-full p-2 border rounded"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Đáp án đúng</label>
+                <input type="text" id="qCorrect" required placeholder="Ví dụ: A hoặc 3,5" class="w-full p-2 border rounded">
+              </div>
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeModal('modalQuestion')" class="px-3 py-1.5 border rounded">Hủy</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded font-medium">Lưu Câu Hỏi</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- MODAL TẠO ĐỀ THI VỚI ĐỦ 3 MỤC -->
+        <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra & Chữa Bài</h3>
+            <form id="formAddExam" class="space-y-3 text-sm">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Tên bài kiểm tra</label>
+                <input type="text" id="examTitle" required class="w-full p-2 border rounded">
+              </div>
+              <div class="grid grid-cols-4 gap-2">
+                <div>
+                  <label class="block text-[10px] font-semibold mb-1">Thời gian (p)</label>
+                  <input type="number" id="examDuration" value="45" required class="w-full p-2 border rounded text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold mb-1">Số câu TN</label>
+                  <input type="number" id="mcqCount" value="12" class="w-full p-2 border rounded text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold mb-1">Số câu Đ/S</label>
+                  <input type="number" id="tfCount" value="4" class="w-full p-2 border rounded text-xs">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold mb-1">Số câu Ngắn</label>
+                  <input type="number" id="saCount" value="2" class="w-full p-2 border rounded text-xs">
+                </div>
+              </div>
+
+              <!-- 3 MỤC QUAN TRỌNG -->
+              <div class="space-y-2 border p-3 rounded bg-blue-50/50">
+                <span class="font-bold text-xs text-blue-900 block border-b pb-1">Tài liệu đính kèm đề kiểm tra:</span>
+                <div>
+                  <label class="block text-[10px] font-semibold text-gray-700">1. Up file đề thi (PDF / Ảnh)</label>
+                  <input type="file" id="examFileInput" required accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-gray-700">2. Up file đáp án chi tiết / lời giải (PDF / Ảnh)</label>
+                  <input type="file" id="examSolutionInput" accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-gray-700">3. Link video bài giảng / chữa đề (YouTube...)</label>
+                  <input type="text" id="examVideoInput" placeholder="https://youtube.com/watch?v=..." class="w-full p-2 border rounded text-xs bg-white">
+                </div>
+              </div>
+
+              <div class="border p-3 rounded bg-gray-50 space-y-3">
+                <div class="flex justify-between items-center border-b pb-1">
+                  <span class="font-bold text-xs text-gray-700">Nhập đáp án chuẩn (Phân cách các câu bằng dấu ;):</span>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-blue-800">Đáp án Trắc nghiệm (Ví dụ: A; B; C; D; A; B)</label>
+                  <input type="text" id="mcqKey" placeholder="A; B; C; D; A; B" class="w-full p-2 border rounded text-xs bg-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-amber-800">Đáp án Đúng/Sai (Mỗi câu 4 ý a,b,c,d cách nhau phẩy, giữa các câu dùng dấu ;)</label>
+                  <input type="text" id="tfKey" placeholder="Đ,S,Đ,S; S,Đ,Đ,S" class="w-full p-2 border rounded text-xs bg-white font-mono">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-indigo-800">Đáp án Trả lời ngắn (Ví dụ: 3,5; -5; 1/2; 0)</label>
+                  <input type="text" id="saKey" placeholder="3,5; -5; 1/2; 0" class="w-full p-2 border rounded text-xs bg-white font-mono">
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onclick="closeModal('modalExam')" class="px-3 py-1.5 border rounded">Hủy</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded font-medium hover:bg-blue-700">Lưu Đề Thi</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      if (document.getElementById('addStuForm')) {
+        document.getElementById('addStuForm').onsubmit = (e) => {
+          e.preventDefault();
+          const u = document.getElementById('stuUser').value;
+          const p = document.getElementById('stuPass').value;
+          db.ref('students').push({ username: u, password: p }, err => {
+            if (!err) alert('Đã cấp tài khoản học sinh!');
+          });
+        };
+      }
+
+      if (document.getElementById('formAddQuestion')) {
+        document.getElementById('formAddQuestion').onsubmit = (e) => {
+          e.preventDefault();
+          const newQ = {
+            chapter: document.getElementById('qChapter').value,
+            type: document.getElementById('qType').value,
+            content: document.getElementById('qContent').value,
+            correct: document.getElementById('qCorrect').value
+          };
+          db.ref('questions').push(newQ, err => {
+            if (!err) {
+              alert('Thêm câu hỏi vào ngân hàng thành công!');
+              closeModal('modalQuestion');
+            }
+          });
+        };
+      }
+
+      if (document.getElementById('formAddLec')) {
+        document.getElementById('formAddLec').onsubmit = (e) => {
+          e.preventDefault();
+          const fileInput = document.getElementById('lecFileInput');
+          const videoUrl = document.getElementById('lecVideoInput').value.trim();
+
+          const processSave = (fileUrl = '', fileName = '') => {
+            const newLec = {
+              title: document.getElementById('lecTitle').value,
+              subject: document.getElementById('lecSubject').value,
+              chapter: document.getElementById('lecChapter').value,
+              fileUrl: fileUrl,
+              fileName: fileName,
+              videoUrl: videoUrl,
+              description: document.getElementById('lecDesc').value,
+              instructor: 'Hai Ton',
+              date: new Date().toISOString().split('T')[0]
+            };
+            db.ref('lectures').push(newLec, err => {
+              if (!err) {
+                alert('Đăng bài giảng thành công!');
+                closeModal('modalLec');
+              }
+            });
+          };
+
+          if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+              processSave(uploadEvent.target.result, file.name);
+            };
+            reader.readAsDataURL(file);
+          } else {
+            processSave();
+          }
+        };
+      }
+
+      if (document.getElementById('formAddExam')) {
+        document.getElementById('formAddExam').onsubmit = (e) => {
+          e.preventDefault();
+          const examFileInput = document.getElementById('examFileInput');
+          const solutionInput = document.getElementById('examSolutionInput');
+          const videoUrl = document.getElementById('examVideoInput').value.trim();
+
+          if (examFileInput.files && examFileInput.files[0]) {
+            const examFile = examFileInput.files[0];
+            const readerExam = new FileReader();
+
+            readerExam.onload = function(eExam) {
+              const examFileUrl = eExam.target.result;
+              if (solutionInput.files && solutionInput.files[0]) {
+                const solFile = solutionInput.files[0];
+                const readerSol = new FileReader();
+                readerSol.onload = function(eSol) {
+                  saveExamData(examFileUrl, eSol.target.result, videoUrl);
+                };
+                readerSol.readAsDataURL(solFile);
+              } else {
+                saveExamData(examFileUrl, '', videoUrl);
+              }
+            };
+            readerExam.readAsDataURL(examFile);
+          }
+        };
+      }
+    }
+
+    function saveExamData(fileUrl, solutionUrl, videoUrl) {
+      const tfGroup = document.getElementById('tfKey').value.split(';').map(g => g.trim());
+      let tfKeys = [];
+      const tfCount = Number(document.getElementById('tfCount').value) || 0;
+      for(let i = 0; i < tfCount; i++) {
+        const subVals = (tfGroup[i] || '').split(',').map(s => s.trim().toUpperCase());
+        tfKeys.push({
+          a: subVals[0] || 'Đ',
+          b: subVals[1] || 'S',
+          c: subVals[2] || 'Đ',
+          d: subVals[3] || 'S'
+        });
+      }
+
+      const newExam = {
+        title: document.getElementById('examTitle').value,
+        duration: Number(document.getElementById('examDuration').value),
+        fileUrl: fileUrl,
+        solutionUrl: solutionUrl,
+        videoUrl: videoUrl,
+        mcqCount: Number(document.getElementById('mcqCount').value),
+        tfCount: tfCount,
+        saCount: Number(document.getElementById('saCount').value),
+        mcqKey: document.getElementById('mcqKey').value,
+        tfKeys: tfKeys,
+        saKey: document.getElementById('saKey').value
+      };
+
+      db.ref('exams').push(newExam, err => {
+        if (!err) {
+          alert('Tạo đề kiểm tra và đính kèm thành công!');
+          closeModal('modalExam');
+        }
+      });
+    }
+
+    function parseKeys(str) {
+      if (!str) return [];
+      if (str.includes(';')) return str.split(';').map(s => s.trim());
+      return str.split(',').map(s => s.trim());
+    }
+
+    function cleanStr(val) {
+      if (!val) return '';
+      return val.toString().trim().replace(/\s+/g, '').replace('.', ',').toUpperCase();
+    }
+
+    function selectMCQ(qNum, val) { myAppState.userAnswers.mcq[qNum] = val; renderUI(); }
+    function selectTF(qNum, subItem, val) { myAppState.userAnswers.tf[`${qNum}_${subItem}`] = val; renderUI(); }
+    function inputSA(qNum, val) { myAppState.userAnswers.sa[qNum] = val.trim(); }
+
+    function navTo(v) { 
+      if (myAppState.timerRef) clearInterval(myAppState.timerRef);
+      if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
+      myAppState.view = v; 
+      renderUI(); 
+    }
+    function pickSubject(s) { myAppState.selectedSubject = s; renderUI(); }
+    function pickChapter(c) { myAppState.selectedChapter = c; renderUI(); }
+    function logOut() { 
+      if(myAppState.timerRef) clearInterval(myAppState.timerRef); 
+      if(myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
+      myAppState.currentUser = null; 
+      renderUI(); 
+    }
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function deleteStudent(id) { if(confirm('Xóa học sinh này?')) db.ref('students/' + id).remove(); }
+    function deleteQuestion(id) { if(confirm('Xóa câu hỏi này?')) db.ref('questions/' + id).remove(); }
+
+    function launchExam(examId) {
+      const exam = myAppState.exams.find(e => e.id === examId);
+      if (!exam) return;
+      myAppState.activeExam = exam;
+      myAppState.userAnswers = { mcq: {}, tf: {}, sa: {} };
+      myAppState.timeRemaining = (exam.duration || 45) * 60;
+      myAppState.resultObj = null;
+      myAppState.view = 'do_exam';
+      renderUI();
+
+      if (myAppState.timerRef) clearInterval(myAppState.timerRef);
+      myAppState.timerRef = setInterval(() => {
+        if (myAppState.timeRemaining > 0 && !myAppState.resultObj) {
+          myAppState.timeRemaining--;
+          const clockEl = document.querySelector('.bg-red-500');
+          if (clockEl) {
+            const mm = Math.floor(myAppState.timeRemaining / 60);
+            const ss = myAppState.timeRemaining % 60;
+            clockEl.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> ${mm}:${ss.toString().padStart(2, '0')}`;
+          }
+        } else if (myAppState.timeRemaining === 0 && !myAppState.resultObj) {
+          clearInterval(myAppState.timerRef);
+          finishExam();
+        }
+      }, 1000);
+    }
+
+    function finishExam() {
+      if (myAppState.timerRef) clearInterval(myAppState.timerRef);
+      if (!myAppState.activeExam) return;
+
+      const exam = myAppState.activeExam;
+      let totalCorrect = 0;
+      let totalItems = (exam.mcqCount || 0) + ((exam.tfCount || 0) * 4) + (exam.saCount || 0);
+
+      const mcqKeys = parseKeys(exam.mcqKey);
+      for (let i = 1; i <= exam.mcqCount; i++) {
+        if (myAppState.userAnswers.mcq[i] && cleanStr(myAppState.userAnswers.mcq[i]) === cleanStr(mcqKeys[i-1])) totalCorrect++;
+      }
+
+      for (let i = 1; i <= (exam.tfCount || 0); i++) {
+        ['a', 'b', 'c', 'd'].forEach(sub => {
+          const uVal = myAppState.userAnswers.tf[`${i}_${sub}`];
+          const cVal = exam.tfKeys?.[i-1]?.[sub];
+          if (uVal && cleanStr(uVal) === cleanStr(cVal)) totalCorrect++;
+        });
+      }
+
+      const saKeys = parseKeys(exam.saKey);
+      for (let i = 1; i <= exam.saCount; i++) {
+        if (myAppState.userAnswers.sa[i] && cleanStr(myAppState.userAnswers.sa[i]) === cleanStr(saKeys[i-1])) totalCorrect++;
+      }
+
+      const finalScore = totalItems > 0 ? Number(((totalCorrect / totalItems) * 10).toFixed(1)) : 10;
+
+      let aiComment = "";
+      let aiWish = "";
+      if (finalScore >= 9) {
+        aiComment = "Tuyệt vời! Kiến thức của bạn rất vững chắc, tư duy logic nhạy bén và xử lý các dạng bài rất chính xác. Hãy tiếp tục giữ vững phong độ đỉnh cao này nhé!";
+        aiWish = "Chúc bạn luôn giữ mãi ngọn lửa đam mê học tập và gặt hái thật nhiều thành tích rực rỡ trong các kỳ thi sắp tới!";
+      } else if (finalScore >= 7) {
+        aiComment = "Kết quả rất tốt! Bạn đã nắm vững phần lớn kiến thức trọng tâm. Tuy nhiên, hãy chú ý rà soát lại một số câu còn nhầm lẫn để đạt điểm tuyệt đối ở lần sau.";
+        aiWish = "Chúc bạn ngày càng tiến bộ, tự tin vững vàng và luôn tràn đầy năng lượng trên con đường chinh phục tri thức!";
+      } else if (finalScore >= 5) {
+        aiComment = "Đạt yêu cầu cơ bản! Bạn đã hiểu bài ở mức độ nền tảng, tuy nhiên cần luyện tập thêm nhiều dạng bài tập nâng cao và cẩn thận hơn trong các bước tính toán.";
+        aiWish = "Chúc bạn luôn kiên trì, nỗ lực hết mình và đạt kết quả cao hơn nữa trong những bài kiểm tra tiếp theo!";
+      } else {
+        aiComment = "Cần cố gắng nhiều hơn nữa nhé! Bạn hãy ôn tập lại thật kỹ lý thuyết sách giáo khoa, làm lại các bài tập ví dụ và nhờ thầy cô hoặc trợ giảng AI hỗ trợ ngay những phần chưa hiểu rõ.";
+        aiWish = "Chúc bạn luôn giữ vững tinh thần lạc quan, quyết tâm lội ngược dòng thành công trong các kỳ thi quan trọng!";
+      }
+
+      const subData = {
+        examTitle: exam.title,
+        studentName: myAppState.currentUser.username,
+        score: finalScore,
+        date: new Date().toLocaleString()
+      };
+
+      db.ref('submissions').push(subData);
+      myAppState.resultObj = { finalScore, correctCount: totalCorrect, totalQuestions: totalItems, aiComment, aiWish };
+      renderUI();
+    }
+
+    function toggleAIChat() {
+      const widget = document.getElementById('aiChatWidget');
+      const toggleBtn = document.getElementById('aiChatToggleBtn');
+      if (widget.classList.contains('hidden')) {
+        widget.classList.remove('hidden');
+        toggleBtn.classList.add('hidden');
+      } else {
+        widget.classList.add('hidden');
+        toggleBtn.classList.remove('hidden');
+      }
+    }
+
+    async function sendAIMessage() {
+      const input = document.getElementById('aiChatInput');
+      const msgContainer = document.getElementById('aiChatMessages');
+      const text = input.value.trim();
+      if (!text) return;
+
+      msgContainer.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-blue-600 text-white p-2.5 rounded-xl max-w-[85%]">${text}</div>
+        </div>
+      `;
+      input.value = '';
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+
+      const loadingId = 'loading_' + Date.now();
+      msgContainer.innerHTML += `
+        <div id="${loadingId}" class="flex justify-start">
+          <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%] flex items-center gap-2">
+            <i class="fa-solid fa-spinner animate-spin"></i> Trợ giảng AI đang suy nghĩ...
+          </div>
+        </div>
+      `;
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+
+      try {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=YOUR_GEMINI_API_KEY", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Bạn là trợ giảng môn Toán. Hãy hướng dẫn câu hỏi: " + text }] }] })
+        });
+        const data = await response.json();
+        document.getElementById(loadingId).remove();
+        let aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Mình đã nhận được câu hỏi. Bạn hãy kiểm tra lại các bước tính toán nhé!";
+        msgContainer.innerHTML += `<div class="flex justify-start"><div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%] whitespace-pre-wrap">${aiReply}</div></div>`;
+      } catch (err) {
+        document.getElementById(loadingId).remove();
+        msgContainer.innerHTML += `<div class="flex justify-start"><div class="bg-red-50 text-red-700 p-2.5 rounded-xl border border-red-100 max-w-[85%]">Lỗi kết nối AI.</div></div>`;
+      }
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    bootApp();
+  </script>
+</body>
+</html>
