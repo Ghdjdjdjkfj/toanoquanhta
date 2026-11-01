@@ -339,7 +339,7 @@
                   <div class="mt-4 flex flex-wrap gap-1.5">
                     ${l.fileUrl ? `<a href="${l.fileUrl}" download="${l.fileName || 'TaiLieu'}" class="flex-1 bg-blue-600 text-white py-1.5 px-2 rounded text-[11px] font-semibold text-center hover:bg-blue-700"><i class="fa-solid fa-download mr-1"></i> Tài liệu</a>` : ''}
                     ${l.solutionUrl ? `<a href="${l.solutionUrl}" download="DapAnChiTiet" class="bg-green-600 text-white py-1.5 px-2 rounded text-[11px] font-semibold text-center hover:bg-green-700"><i class="fa-solid fa-file-lines mr-1"></i> Đáp án</a>` : ''}
-                    ${l.videoUrl ? `<a href="${l.videoUrl}" download="VideoBaiGiang.mp4" class="bg-red-600 text-white py-1.5 px-2 rounded text-[11px] font-semibold text-center hover:bg-red-700"><i class="fa-solid fa-video mr-1"></i> Video</a>` : ''}
+                    ${l.videoUrl ? `<a href="${l.videoUrl}" target="_blank" class="bg-red-600 text-white py-1.5 px-2 rounded text-[11px] font-semibold text-center hover:bg-red-700"><i class="fa-solid fa-video mr-1"></i> Video</a>` : ''}
                   </div>
                 </div>
               `).join('')}
@@ -365,7 +365,7 @@
                     <div class="flex flex-wrap gap-3 mt-2 text-xs">
                       ${e.fileUrl ? `<a href="${e.fileUrl}" download="DeThi" class="text-blue-600 hover:underline font-semibold"><i class="fa-solid fa-file-pdf mr-1"></i>Tải đề thi</a>` : ''}
                       ${e.solutionUrl ? `<a href="${e.solutionUrl}" download="DapAnChiTiet" class="text-green-600 hover:underline font-semibold"><i class="fa-solid fa-file-lines mr-1"></i>Tải đáp án chi tiết</a>` : ''}
-                      ${e.videoUrl ? `<a href="${e.videoUrl}" download="VideoChuaDe.mp4" class="text-red-600 hover:underline font-semibold"><i class="fa-solid fa-video mr-1"></i>Tải video MP4</a>` : ''}
+                      ${e.videoUrl ? `<a href="${e.videoUrl}" target="_blank" class="text-red-600 hover:underline font-semibold"><i class="fa-solid fa-video mr-1"></i>Xem video bài giảng</a>` : ''}
                     </div>
                   </div>
                   <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700 shrink-0"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
@@ -453,12 +453,9 @@
                     </div>
 
                     ${exam.videoUrl ? `
-                      <div class="bg-black p-2 rounded-xl shadow mt-3 text-center">
-                        <p class="text-white text-xs font-bold mb-2"><i class="fa-solid fa-video text-red-500 mr-1"></i> Video Chữa Đề Chi Tiết (.mp4):</p>
-                        <video controls class="w-full max-h-72 rounded mx-auto">
-                          <source src="${exam.videoUrl}" type="video/mp4">
-                          Trình duyệt của bạn không hỗ trợ phát video.
-                        </video>
+                      <div class="bg-black p-3 rounded-xl shadow mt-3 text-center">
+                        <p class="text-white text-xs font-bold mb-2"><i class="fa-solid fa-video text-red-500 mr-1"></i> Video Chữa Đề Chi Tiết:</p>
+                        <a href="${exam.videoUrl}" target="_blank" class="inline-block bg-red-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-red-700">Mở video bài giảng / chữa đề</a>
                       </div>
                     ` : ''}
                   </div>
@@ -658,7 +655,7 @@
           </main>
         </div>
 
-        <!-- MODAL ĐĂNG BÀI GIẢNG (ĐỦ 3 FILE: TÀI LIỆU, ĐÁP ÁN, VIDEO MP4) -->
+        <!-- MODAL ĐĂNG BÀI GIẢNG (ĐÃ SỔ ĐỦ 3 MỤC AN TOÀN) -->
         <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg text-blue-800"><i class="fa-solid fa-book-open mr-1.5"></i> Đăng Bài Giảng Mới</h3>
@@ -697,8 +694,8 @@
                   <input type="file" id="lecSolutionInput" accept="application/pdf,image/*,.doc,.docx" class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold text-gray-700">3. Video bài giảng (.mp4)</label>
-                  <input type="file" id="lecVideoInput" accept="video/mp4" class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[10px] font-semibold text-gray-700">3. Link Video bài giảng (YouTube hoặc link MP4)</label>
+                  <input type="text" id="lecVideoInput" placeholder="https://youtube.com/... hoặc link video" class="w-full p-2 border rounded text-xs bg-white">
                 </div>
               </div>
 
@@ -749,7 +746,7 @@
           </div>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI (ĐỦ 3 FILE: ĐỀ, HƯỚNG DẪN GIẢI, VIDEO MP4) -->
+        <!-- MODAL TẠO ĐỀ THI -->
         <div id="modalExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-xl p-6 max-w-xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg text-blue-800">Tạo Đề Kiểm Tra & Đính Kèm File</h3>
@@ -778,7 +775,7 @@
               </div>
 
               <div class="space-y-2 border p-3 rounded bg-blue-50/50">
-                <span class="font-bold text-xs text-blue-900 block border-b pb-1">Tải lên 3 file đính kèm chính:</span>
+                <span class="font-bold text-xs text-blue-900 block border-b pb-1">Tải lên file đính kèm chính:</span>
                 <div>
                   <label class="block text-[10px] font-semibold text-gray-700">1. File đề thi (PDF / Ảnh / Word)</label>
                   <input type="file" id="examFileInput" required accept="application/pdf,image/*,.doc,.docx" class="w-full p-1.5 border rounded text-xs bg-white">
@@ -788,8 +785,8 @@
                   <input type="file" id="examSolutionInput" accept="application/pdf,image/*,.doc,.docx" class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold text-gray-700">3. Video bài giảng chữa đề (.mp4)</label>
-                  <input type="file" id="examVideoInput" accept="video/mp4" class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[10px] font-semibold text-gray-700">3. Link Video bài giảng (YouTube hoặc link MP4)</label>
+                  <input type="text" id="examVideoInput" placeholder="https://youtube.com/..." class="w-full p-2 border rounded text-xs bg-white">
                 </div>
               </div>
 
@@ -854,9 +851,9 @@
           e.preventDefault();
           const fileInput = document.getElementById('lecFileInput');
           const solutionInput = document.getElementById('lecSolutionInput');
-          const videoInput = document.getElementById('lecVideoInput');
+          const videoInputVal = document.getElementById('lecVideoInput').value.trim();
 
-          let fUrl = '', fName = '', sUrl = '', vUrl = '';
+          let fUrl = '', fName = '', sUrl = '';
 
           const saveLectureData = () => {
             const newLec = {
@@ -866,7 +863,7 @@
               fileUrl: fUrl,
               fileName: fName,
               solutionUrl: sUrl,
-              videoUrl: vUrl,
+              videoUrl: videoInputVal,
               description: document.getElementById('lecDesc').value,
               instructor: 'Hai Ton',
               date: new Date().toISOString().split('T')[0]
@@ -875,34 +872,28 @@
               if (!err) {
                 alert('Đăng bài giảng thành công!');
                 closeModal('modalLec');
+              } else {
+                alert('Lỗi lưu dữ liệu: ' + err.message);
               }
             });
           };
 
-          const readVideo = () => {
-            if (videoInput.files && videoInput.files[0]) {
+          const readSolution = () => {
+            if (solutionInput && solutionInput.files && solutionInput.files[0]) {
               const reader = new FileReader();
-              reader.onload = (ev) => { vUrl = ev.target.result; saveLectureData(); };
-              reader.readAsDataURL(videoInput.files[0]);
+              reader.onload = (ev) => { sUrl = ev.target.result; saveLectureData(); };
+              reader.onerror = () => { alert('Lỗi đọc file đáp án!'); };
+              reader.readAsDataURL(solutionInput.files[0]);
             } else {
               saveLectureData();
             }
           };
 
-          const readSolution = () => {
-            if (solutionInput.files && solutionInput.files[0]) {
-              const reader = new FileReader();
-              reader.onload = (ev) => { sUrl = ev.target.result; readVideo(); };
-              reader.readAsDataURL(solutionInput.files[0]);
-            } else {
-              readVideo();
-            }
-          };
-
-          if (fileInput.files && fileInput.files[0]) {
+          if (fileInput && fileInput.files && fileInput.files[0]) {
             fName = fileInput.files[0].name;
             const reader = new FileReader();
             reader.onload = (ev) => { fUrl = ev.target.result; readSolution(); };
+            reader.onerror = () => { alert('Lỗi đọc file tài liệu!'); };
             reader.readAsDataURL(fileInput.files[0]);
           } else {
             readSolution();
@@ -915,7 +906,7 @@
           e.preventDefault();
           const examFileInput = document.getElementById('examFileInput');
           const solutionInput = document.getElementById('examSolutionInput');
-          const videoInput = document.getElementById('examVideoInput');
+          const videoUrlVal = document.getElementById('examVideoInput').value.trim();
 
           if (examFileInput.files && examFileInput.files[0]) {
             const examFile = examFileInput.files[0];
@@ -924,33 +915,18 @@
             readerExam.onload = function(eExam) {
               const examFileUrl = eExam.target.result;
               let solutionUrl = '';
-              let videoUrl = '';
 
               const processSolution = () => {
-                if (solutionInput.files && solutionInput.files[0]) {
+                if (solutionInput && solutionInput.files && solutionInput.files[0]) {
                   const solFile = solutionInput.files[0];
                   const readerSol = new FileReader();
                   readerSol.onload = function(eSol) {
                     solutionUrl = eSol.target.result;
-                    processVideo();
+                    saveExamData(examFileUrl, solutionUrl, videoUrlVal);
                   };
                   readerSol.readAsDataURL(solFile);
                 } else {
-                  processVideo();
-                }
-              };
-
-              const processVideo = () => {
-                if (videoInput.files && videoInput.files[0]) {
-                  const vidFile = videoInput.files[0];
-                  const readerVid = new FileReader();
-                  readerVid.onload = function(eVid) {
-                    videoUrl = eVid.target.result;
-                    saveExamData(examFileUrl, solutionUrl, videoUrl);
-                  };
-                  readerVid.readAsDataURL(vidFile);
-                } else {
-                  saveExamData(examFileUrl, solutionUrl, videoUrl);
+                  saveExamData(examFileUrl, solutionUrl, videoUrlVal);
                 }
               };
 
