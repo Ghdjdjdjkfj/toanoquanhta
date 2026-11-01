@@ -17,21 +17,112 @@
       -ms-user-select: none;
       user-select: none;
     }
+    /* Grid kẻ ô ly cho bảng viết Scrble Ink */
+    .bg-grid-paper {
+      background-color: #1e3a8a;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+      background-size: 25px 25px;
+    }
+    .bg-white-grid {
+      background-color: #ffffff;
+      background-image: linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
   <div id="app"></div>
 
-  <!-- CHATBOT TRỢ GIẢNG AI NỔI -->
-  <div id="aiChatWidget" class="fixed bottom-5 right-5 z-50 hidden">
-    <div class="bg-white rounded-2xl shadow-2xl w-80 md:w-96 border flex flex-col overflow-hidden h-[450px]">
+  <!-- BỘ CÔNG CỤ NỔI BÊN GÓC PHẢI (TRỢ GIẢNG AI - CASIO 580 - BẢNG VIẾT SCRBLE INK - ĐỒ THỊ) -->
+  <div class="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+    
+    <!-- MODAL BẢNG VIẾT SCRBLE INK -->
+    <div id="scrbleBoardWidget" class="hidden bg-white rounded-2xl shadow-2xl w-[90vw] md:w-[800px] h-[550px] border flex flex-col overflow-hidden">
+      <div class="bg-indigo-700 text-white p-3 flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-pen-nib"></i>
+          <span class="font-bold text-sm">Bảng Viết Dạy Học Online (Scrble Ink)</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <button onclick="setBoardBg('grid')" class="bg-indigo-800 px-2 py-1 rounded hover:bg-indigo-900">Bảng xanh ô li</button>
+          <button onclick="setBoardBg('white')" class="bg-indigo-800 px-2 py-1 rounded hover:bg-indigo-900">Giấy trắng</button>
+          <button onclick="clearBoardCanvas()" class="bg-red-600 px-2 py-1 rounded hover:bg-red-700"><i class="fa-solid fa-trash"></i> Xóa bảng</button>
+          <button onclick="toggleWidget('scrbleBoardWidget')" class="text-white hover:text-gray-200 ml-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+      </div>
+      <div class="bg-gray-100 p-2 border-b flex items-center gap-3 text-xs shrink-0">
+        <span class="font-bold">Màu bút:</span>
+        <button onclick="setPenColor('#ffffff')" class="w-5 h-5 rounded-full bg-white border border-gray-400"></button>
+        <button onclick="setPenColor('#facc15')" class="w-5 h-5 rounded-full bg-yellow-400"></button>
+        <button onclick="setPenColor('#ef4444')" class="w-5 h-5 rounded-full bg-red-500"></button>
+        <button onclick="setPenColor('#3b82f6')" class="w-5 h-5 rounded-full bg-blue-500"></button>
+        <span class="font-bold ml-2">Nét bút:</span>
+        <input type="range" id="penSize" min="1" max="10" value="3" class="w-20" onchange="setPenWidth(this.value)">
+      </div>
+      <div class="flex-1 relative overflow-hidden bg-grid-paper" id="boardContainer">
+        <canvas id="inkCanvas" class="w-full h-full cursor-crosshair"></canvas>
+      </div>
+    </div>
+
+    <!-- MODAL MÁY TÍNH CASIO FX-580VN X -->
+    <div id="casioWidget" class="hidden bg-slate-800 text-white rounded-2xl shadow-2xl w-72 p-4 border border-slate-600 flex flex-col space-y-3">
+      <div class="flex justify-between items-center border-b border-slate-600 pb-2">
+        <span class="font-bold text-xs text-yellow-400">CASIO fx-580VN X</span>
+        <button onclick="toggleWidget('casioWidget')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="bg-emerald-950 text-emerald-300 font-mono text-right p-3 rounded-lg text-lg border border-emerald-700 min-h-[50px] break-all" id="casioScreen">0</div>
+      <div class="grid grid-cols-4 gap-1.5 text-xs font-bold">
+        <button onclick="pressCasio('C')" class="bg-red-600 p-2 rounded">AC</button>
+        <button onclick="pressCasio('(')" class="bg-slate-700 p-2 rounded">(</button>
+        <button onclick="pressCasio(')')" class="bg-slate-700 p-2 rounded">)</button>
+        <button onclick="pressCasio('/')" class="bg-amber-600 p-2 rounded">÷</button>
+        
+        <button onclick="pressCasio('7')" class="bg-slate-600 p-2 rounded">7</button>
+        <button onclick="pressCasio('8')" class="bg-slate-600 p-2 rounded">8</button>
+        <button onclick="pressCasio('9')" class="bg-slate-600 p-2 rounded">9</button>
+        <button onclick="pressCasio('*')" class="bg-amber-600 p-2 rounded">×</button>
+        
+        <button onclick="pressCasio('4')" class="bg-slate-600 p-2 rounded">4</button>
+        <button onclick="pressCasio('5')" class="bg-slate-600 p-2 rounded">5</button>
+        <button onclick="pressCasio('6')" class="bg-slate-600 p-2 rounded">6</button>
+        <button onclick="pressCasio('-')" class="bg-amber-600 p-2 rounded">-</button>
+        
+        <button onclick="pressCasio('1')" class="bg-slate-600 p-2 rounded">1</button>
+        <button onclick="pressCasio('2')" class="bg-slate-600 p-2 rounded">2</button>
+        <button onclick="pressCasio('3')" class="bg-slate-600 p-2 rounded">3</button>
+        <button onclick="pressCasio('+')" class="bg-amber-600 p-2 rounded">+</button>
+        
+        <button onclick="pressCasio('0')" class="bg-slate-600 p-2 rounded col-span-2">0</button>
+        <button onclick="pressCasio('.')" class="bg-slate-600 p-2 rounded">.</button>
+        <button onclick="pressCasio('=')" class="bg-blue-600 p-2 rounded">=</button>
+      </div>
+    </div>
+
+    <!-- MODAL VẼ ĐỒ THỊ AI -->
+    <div id="graphWidget" class="hidden bg-white rounded-2xl shadow-2xl w-[90vw] md:w-[700px] h-[500px] border flex flex-col overflow-hidden">
+      <div class="bg-teal-700 text-white p-3 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-chart-line"></i>
+          <span class="font-bold text-sm">Công Cụ AI Vẽ Đồ Thị Hàm Số Tương Tác</span>
+        </div>
+        <button onclick="toggleWidget('graphWidget')" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="flex-1 w-full h-full">
+        <iframe src="https://www.desmos.com/calculator?embed" class="w-full h-full border-none"></iframe>
+      </div>
+    </div>
+
+    <!-- MODAL CHATBOT TRỢ GIẢNG AI -->
+    <div id="aiChatWidget" class="hidden bg-white rounded-2xl shadow-2xl w-80 md:w-96 border flex flex-col overflow-hidden h-[450px]">
       <div class="bg-blue-600 text-white p-3 flex justify-between items-center">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-robot text-lg"></i>
           <span class="font-bold text-sm">Trợ Giảng AI - Toán 9</span>
         </div>
-        <button onclick="toggleAIChat()" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <button onclick="toggleWidget('aiChatWidget')" class="text-white hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div id="aiChatMessages" class="flex-1 p-3 overflow-y-auto space-y-3 text-xs bg-gray-50">
         <div class="bg-blue-50 text-blue-900 p-2.5 rounded-xl border border-blue-100 max-w-[85%]">
@@ -43,11 +134,24 @@
         <button onclick="sendAIMessage()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-blue-700"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
     </div>
-  </div>
 
-  <button onclick="toggleAIChat()" id="aiChatToggleBtn" class="fixed bottom-5 right-5 z-40 bg-blue-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105">
-    <i class="fa-solid fa-comments text-2xl"></i>
-  </button>
+    <!-- THANH NÚT BẤM CÔNG CỤ MỚI NỔI BÊN GÓC NỔI -->
+    <div class="flex gap-2">
+      <button onclick="toggleWidget('scrbleBoardWidget'); initBoardCanvas();" class="bg-indigo-600 text-white px-3 py-3 rounded-full shadow-2xl flex items-center gap-1.5 hover:bg-indigo-700 text-xs font-bold transition transform hover:scale-105" title="Bảng viết Scrble Ink">
+        <i class="fa-solid fa-pen-nib text-base"></i> <span class="hidden md:inline">Bảng viết Ink</span>
+      </button>
+      <button onclick="toggleWidget('casioWidget')" class="bg-slate-700 text-yellow-400 px-3 py-3 rounded-full shadow-2xl flex items-center gap-1.5 hover:bg-slate-800 text-xs font-bold transition transform hover:scale-105" title="Máy tính Casio FX-580">
+        <i class="fa-solid fa-calculator text-base"></i> <span class="hidden md:inline">Casio 580</span>
+      </button>
+      <button onclick="toggleWidget('graphWidget')" class="bg-teal-600 text-white px-3 py-3 rounded-full shadow-2xl flex items-center gap-1.5 hover:bg-teal-700 text-xs font-bold transition transform hover:scale-105" title="Vẽ đồ thị hàm số">
+        <i class="fa-solid fa-chart-line text-base"></i> <span class="hidden md:inline">Vẽ Đồ Thị</span>
+      </button>
+      <button onclick="toggleWidget('aiChatWidget')" class="bg-blue-600 text-white w-12 h-12 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition transform hover:scale-105" title="Trợ giảng AI">
+        <i class="fa-solid fa-comments text-xl"></i>
+      </button>
+    </div>
+
+  </div>
 
   <script>
     const firebaseConfig = {
@@ -232,6 +336,91 @@
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
+    }
+
+    // XỬ LÝ MÁY TÍNH CASIO 580
+    let casioExpr = '';
+    function pressCasio(val) {
+      const screen = document.getElementById('casioScreen');
+      if (val === 'C') {
+        casioExpr = '';
+        screen.innerText = '0';
+      } else if (val === '=') {
+        try {
+          let res = eval(casioExpr.replace(/×/g, '*').replace(/÷/g, '/'));
+          screen.innerText = res;
+          casioExpr = res.toString();
+        } catch(e) {
+          screen.innerText = 'Syntax ERROR';
+          casioExpr = '';
+        }
+      } else {
+        casioExpr += val;
+        screen.innerText = casioExpr;
+      }
+    }
+
+    // XỬ LÝ BẢNG VIẾT SCRBLE INK (CANVAS)
+    let isDrawing = false;
+    let penColor = '#ffffff';
+    let penWidth = 3;
+    let canvas, ctx;
+
+    function initBoardCanvas() {
+      setTimeout(() => {
+        canvas = document.getElementById('inkCanvas');
+        if (!canvas) return;
+        const container = document.getElementById('boardContainer');
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        ctx = canvas.getContext('2d');
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        canvas.onmousedown = startDraw;
+        canvas.onmousemove = draw;
+        canvas.onmouseup = stopDraw;
+        canvas.ontouchstart = (e) => { startDraw(e.touches[0]); };
+        canvas.ontouchmove = (e) => { draw(e.touches[0]); };
+        canvas.ontouchend = stopDraw;
+      }, 100);
+    }
+
+    function startDraw(e) {
+      isDrawing = true;
+      const rect = canvas.getBoundingClientRect();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      ctx.strokeStyle = penColor;
+      ctx.lineWidth = penWidth;
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.stroke();
+    }
+
+    function stopDraw() { isDrawing = false; }
+    function setPenColor(c) { penColor = c; }
+    function setPenWidth(w) { penWidth = w; }
+    function clearBoardCanvas() { if(ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function setBoardBg(type) {
+      const container = document.getElementById('boardContainer');
+      if (type === 'grid') {
+        container.className = "flex-1 relative overflow-hidden bg-grid-paper";
+        penColor = '#ffffff';
+      } else {
+        container.className = "flex-1 relative overflow-hidden bg-white-grid";
+        penColor = '#000000';
+      }
+    }
+
+    function toggleWidget(id) {
+      const el = document.getElementById(id);
+      if (el.classList.contains('hidden')) el.classList.remove('hidden');
+      else el.classList.add('hidden');
     }
 
     function renderUI() {
@@ -655,7 +844,7 @@
           </main>
         </div>
 
-        <!-- MODAL ĐĂNG BÀI GIẢNG (ĐÃ SỔ ĐỦ 3 MỤC AN TOÀN) -->
+        <!-- MODAL ĐĂNG BÀI GIẢNG -->
         <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg text-blue-800"><i class="fa-solid fa-book-open mr-1.5"></i> Đăng Bài Giảng Mới</h3>
@@ -1089,18 +1278,6 @@
       db.ref('submissions').push(subData);
       myAppState.resultObj = { finalScore, correctCount: totalCorrect, totalQuestions: totalItems, aiComment, aiWish };
       renderUI();
-    }
-
-    function toggleAIChat() {
-      const widget = document.getElementById('aiChatWidget');
-      const toggleBtn = document.getElementById('aiChatToggleBtn');
-      if (widget.classList.contains('hidden')) {
-        widget.classList.remove('hidden');
-        toggleBtn.classList.add('hidden');
-      } else {
-        widget.classList.add('hidden');
-        toggleBtn.classList.remove('hidden');
-      }
     }
 
     async function sendAIMessage() {
