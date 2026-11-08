@@ -167,6 +167,35 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // DANH SÁCH LỘ TRÌNH MẶC ĐỊNH SẼ KHỞI TẠO TRÊN FIREBASE NẾU CHƯA CÓ
+    const defaultRoadmapsList = [
+      {
+        title: "LỘ TRÌNH T - NỀN TẢNG TOÁN 9 (SGK KNTT)",
+        chapters: [
+          "Chương I: Phương trình và hệ phương trình bậc nhất hai ẩn",
+          "Chương II: Phương trình và bất phương trình bậc nhất một ẩn",
+          "Chương III: Căn bậc hai và căn bậc ba",
+          "Chương IV: Hệ thức lượng trong tam giác vuông",
+          "Chương V: Đường tròn",
+          "Chương VI: Hàm số y = ax² (a ≠ 0) và phương trình bậc hai một ẩn",
+          "Chương VII: Tần số và tần số tương đối",
+          "Chương VIII: Xác suất của biến cố trong một số mô hình xác suất đơn giản",
+          "Chương IX: Đường tròn ngoại tiếp và đường tròn nội tiếp",
+          "Chương X: Một số hình khối trong thực tiễn"
+        ]
+      },
+      {
+        title: "BỘ ĐỀ THI GIỮA KỲ & CUỐI KỲ (HK1 - HK2)",
+        chapters: [
+          "Đề Thi Giữa Kỳ I (GK1)",
+          "Đề Thi Cuối Kỳ I (CK1)",
+          "Đề Thi Giữa Kỳ II (GK2)",
+          "Đề Thi Cuối Kỳ II (CK2)",
+          "Đề Thi Thử Vào 10 Chuyên & Sở GD-ĐT"
+        ]
+      }
+    ];
+
     let myAppState = {
       currentUser: null,
       view: 'home',
@@ -190,7 +219,15 @@
     function bootApp() {
       db.ref('roadmaps').on('value', snap => {
         const d = snap.val();
-        myAppState.roadmaps = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        if (!d) {
+          // Khởi tạo các lộ trình mặc định nếu Firebase trống
+          defaultRoadmapsList.forEach(r => db.ref('roadmaps').push(r));
+        } else {
+          myAppState.roadmaps = Object.keys(d).map(k => ({ id: k, ...d[k] }));
+          if (myAppState.roadmaps.length > 0 && Object.keys(myAppState.openRoadmaps).length === 0) {
+            myAppState.openRoadmaps[myAppState.roadmaps[0].id] = true;
+          }
+        }
         renderUI();
       });
       db.ref('lectures').on('value', snap => {
@@ -229,6 +266,54 @@
     function getDailyStudyWish() {
       const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
       return studyWishes[dayOfYear % studyWishes.length];
+    }
+
+    // CHỨC NĂNG ĐẾM NGƯỢC TẾT VÀ SỰ KIỆN
+    function startTetCountdown() {
+      if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
+      const tet2027Date = new Date('2027-02-06T00:00:00');
+
+      function updateTimer() {
+        const now = new Date();
+        const diff = tet2027Date - now;
+        const boxesEl = document.getElementById('tetCountdownBoxes');
+        if (!boxesEl) return;
+
+        if (diff <= 0) {
+          boxesEl.innerHTML = `<div class="text-yellow-300 font-bold text-lg py-2">🧧 Chúc Mừng Năm Mới 2027!</div>`;
+        } else {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+          boxesEl.innerHTML = `
+            <div class="flex items-center gap-2 sm:gap-3 my-1">
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(days).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Ngày</span>
+              </div>
+              <span class="text-yellow-300 font-bold text-lg pb-4">:</span>
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(hours).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Giờ</span>
+              </div>
+              <span class="text-yellow-300 font-bold text-lg pb-4">:</span>
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(minutes).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Phút</span>
+              </div>
+              <span class="text-yellow-300 font-bold text-lg pb-4">:</span>
+              <div class="flex flex-col items-center">
+                <div class="bg-black/40 border border-yellow-400/40 text-yellow-300 font-black text-lg sm:text-2xl px-2.5 sm:px-3.5 py-1 rounded-xl shadow-md min-w-[48px] text-center font-mono">${String(seconds).padStart(2, '0')}</div>
+                <span class="text-[9px] sm:text-[10px] text-yellow-200 uppercase mt-1 font-bold">Giây</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+      updateTimer();
+      myAppState.tetTimerInterval = setInterval(updateTimer, 1000);
     }
 
     function exportQuestionBank() {
@@ -335,8 +420,8 @@
       renderUI();
     }
 
-    function toggleChapterCollapse(chapId) {
-      myAppState.openChapters[chapId] = !myAppState.openChapters[chapId];
+    function toggleChapterCollapse(chapKey) {
+      myAppState.openChapters[chapKey] = !myAppState.openChapters[chapKey];
       renderUI();
     }
 
@@ -419,6 +504,21 @@
         const subjects = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
 
         mainArea = `
+          <!-- BANNER ĐẾM NGƯỢC NĂM MỚI BAN ĐẦU -->
+          <div id="tetBannerContent" class="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600 text-white p-4 sm:p-5 rounded-2xl shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-blue-400">
+            <div class="space-y-2 text-center md:text-left flex-1">
+              <div class="text-[11px] uppercase tracking-widest text-yellow-300 font-bold flex items-center justify-center md:justify-start gap-1">
+                <i class="fa-solid fa-graduation-cap"></i> Góc Học Tập & Động Lực Mỗi Ngày
+              </div>
+              <div id="tetCountdownBoxes" class="flex justify-center md:justify-start"></div>
+              <div class="text-xs text-yellow-100 italic pt-1 border-t border-blue-400/50"><i class="fa-solid fa-quote-left mr-1"></i> ${getDailyStudyWish()}</div>
+            </div>
+            <div class="bg-black/30 p-3 sm:p-4 rounded-2xl text-center border border-white/20 shrink-0 shadow-inner">
+              <span class="text-[10px] uppercase block text-yellow-300 font-bold tracking-wider">Mục tiêu ôn thi</span>
+              <span class="text-base sm:text-lg font-black text-white">Điểm 10 Trong Tầm Tay</span>
+            </div>
+          </div>
+
           <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
             <div class="flex gap-2 overflow-x-auto pb-2">
               ${subjects.map(s => `<button onclick="pickSubject('${s}')" class="px-3 py-1.5 rounded text-sm font-medium ${myAppState.selectedSubject === s ? 'bg-blue-600 text-white' : 'bg-white border'}">${s}</button>`).join('')}
@@ -522,6 +622,7 @@
             }
           </div>
         `;
+        setTimeout(startTetCountdown, 50);
       }
 
       else if (myAppState.view === 'exam_list') {
@@ -616,8 +717,8 @@
             <h3 class="font-bold text-lg text-red-800">Thêm Lộ Trình Mới</h3>
             <form id="formAddRoadmap" class="space-y-3 text-sm">
               <div>
-                <label class="block text-xs font-semibold mb-1">Tên lộ trình (Ví dụ: LỘ TRÌNH T3...)</label>
-                <input type="text" id="rmTitle" required class="w-full p-2 border rounded text-xs" placeholder="Nhập tên lộ trình...">
+                <label class="block text-xs font-semibold mb-1">Tên lộ trình</label>
+                <input type="text" id="rmTitle" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: LỘ TRÌNH T - NỀN TẢNG TOÁN 9...">
               </div>
               <div class="flex justify-end gap-2 pt-2 border-t">
                 <button type="button" onclick="closeModal('modalRoadmap')" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
@@ -791,7 +892,11 @@
       }
     }
 
-    function navTo(v) { myAppState.view = v; renderUI(); }
+    function navTo(v) { 
+      if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
+      myAppState.view = v; 
+      renderUI(); 
+    }
     function pickSubject(s) { myAppState.selectedSubject = s; renderUI(); }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
