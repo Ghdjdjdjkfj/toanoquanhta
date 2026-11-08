@@ -167,45 +167,11 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const roadmapsData = [
-      {
-        title: "LỘ TRÌNH T3 - CHUYÊN ĐỀ TOÁN THỰC TẾ",
-        chapters: [
-          "Chương I: Phương trình và hệ phương trình bậc nhất hai ẩn",
-          "Chương II: Phương trình và bất phương trình bậc nhất một ẩn"
-        ]
-      },
-      {
-        title: "LỘ TRÌNH E1 - CÁC CHUYÊN ĐỀ CHO CÁC KÌ THI RIÊNG",
-        chapters: [
-          "Chương III: Căn bậc hai và căn bậc ba",
-          "Chương IV: Hệ thức lượng trong tam giác vuông"
-        ]
-      },
-      {
-        title: "LỘ TRÌNH E2 - LUYỆN CÁC ĐỀ GIỮA KỲ, CUỐI KỲ, HSG, KSCL",
-        chapters: [
-          "Giữa kỳ I", "Cuối kỳ I", "Giữa kỳ II", "Cuối kỳ II"
-        ]
-      },
-      {
-        title: "LỘ TRÌNH BOOK3 - PHÂN DẠNG CHUYÊN ĐỀ TOÁN 9, 10, 11, 12",
-        chapters: [
-          "BOOK3 - MÃ A - KIẾN THỨC TOÁN 9",
-          "BOOK3 - MÃ B - KIẾN THỨC TOÁN 10",
-          "BOOK3 - MÃ C - KIẾN THỨC TOÁN 11",
-          "Chủ đề ôn thi vào 10",
-          "Trắc nghiệm",
-          "Bài tập tự luyện"
-        ]
-      }
-    ];
-
     let myAppState = {
       currentUser: null,
       view: 'home',
       selectedSubject: 'Toán 9',
-      selectedChapter: 'Tất cả',
+      roadmaps: [],
       lectures: [],
       exams: [],
       questions: [],
@@ -217,11 +183,16 @@
       resultObj: null,
       timerRef: null,
       tetTimerInterval: null,
-      openRoadmaps: { 3: true }, // Mở mặc định lộ trình BOOK3
-      openChapters: { "BOOK3 - MÃ A - KIẾN THỨC TOÁN 9": true }
+      openRoadmaps: {},
+      openChapters: {}
     };
 
     function bootApp() {
+      db.ref('roadmaps').on('value', snap => {
+        const d = snap.val();
+        myAppState.roadmaps = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
+        renderUI();
+      });
       db.ref('lectures').on('value', snap => {
         const d = snap.val();
         myAppState.lectures = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
@@ -274,7 +245,7 @@
       downloadAnchor.remove();
     }
 
-    // XỬ LÝ MÁY TÍNH CASIO 580
+    // MÁY TÍNH CASIO 580
     let casioExpr = '';
     function pressCasio(val) {
       const screen = document.getElementById('casioScreen');
@@ -296,7 +267,7 @@
       }
     }
 
-    // XỬ LÝ BẢNG VIẾT SCRBLE INK (CANVAS)
+    // BẢNG VIẾT SCRBLE INK
     let isDrawing = false;
     let penColor = '#ffffff';
     let penWidth = 3;
@@ -359,13 +330,13 @@
       else el.classList.add('hidden');
     }
 
-    function toggleRoadmap(idx) {
-      myAppState.openRoadmaps[idx] = !myAppState.openRoadmaps[idx];
+    function toggleRoadmap(id) {
+      myAppState.openRoadmaps[id] = !myAppState.openRoadmaps[id];
       renderUI();
     }
 
-    function toggleChapterCollapse(chapName) {
-      myAppState.openChapters[chapName] = !myAppState.openChapters[chapName];
+    function toggleChapterCollapse(chapId) {
+      myAppState.openChapters[chapId] = !myAppState.openChapters[chapId];
       renderUI();
     }
 
@@ -373,8 +344,21 @@
       if (confirm('Thầy/cô có chắc chắn muốn xóa bài giảng này không?')) {
         db.ref('lectures/' + id).remove(err => {
           if (!err) alert('Đã xóa bài giảng thành công!');
-          else alert('Lỗi khi xóa: ' + err.message);
         });
+      }
+    }
+
+    function deleteRoadmap(id) {
+      if (confirm('Xóa lộ trình này sẽ làm mất các chương bên trong. Thầy/cô chắc chứ?')) {
+        db.ref('roadmaps/' + id).remove();
+      }
+    }
+
+    function deleteChapter(roadmapId, chapIdx) {
+      const rm = myAppState.roadmaps.find(r => r.id === roadmapId);
+      if (rm && rm.chapters) {
+        rm.chapters.splice(chapIdx, 1);
+        db.ref('roadmaps/' + roadmapId).update({ chapters: rm.chapters });
       }
     }
 
@@ -435,77 +419,107 @@
         const subjects = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
 
         mainArea = `
-          <div class="flex justify-between items-center mb-4 gap-2">
+          <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
             <div class="flex gap-2 overflow-x-auto pb-2">
               ${subjects.map(s => `<button onclick="pickSubject('${s}')" class="px-3 py-1.5 rounded text-sm font-medium ${myAppState.selectedSubject === s ? 'bg-blue-600 text-white' : 'bg-white border'}">${s}</button>`).join('')}
             </div>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalLec')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700 shrink-0">+ Đăng Bài Giảng</button>` : ''}
+            <div class="flex gap-2">
+              ${myAppState.currentUser.role === 'admin' ? `
+                <button onclick="openModal('modalRoadmap')" class="bg-indigo-600 text-white px-3 py-2 rounded text-sm font-semibold hover:bg-indigo-700 shrink-0">+ Thêm Lộ Trình</button>
+                <button onclick="openModal('modalChapter')" class="bg-amber-600 text-white px-3 py-2 rounded text-sm font-semibold hover:bg-amber-700 shrink-0">+ Thêm Chương</button>
+                <button onclick="openModal('modalLec')" class="bg-green-600 text-white px-3 py-2 rounded text-sm font-semibold hover:bg-green-700 shrink-0">+ Đăng Bài Giảng</button>
+              ` : ''}
+            </div>
           </div>
 
-          <!-- GIAO DIỆN LỘ TRÌNH THEO MẪU ACCORDION -->
+          <!-- DANH SÁCH LỘ TRÌNH ĐỘNG TỪ FIREBASE -->
           <div class="space-y-4">
-            ${roadmapsData.map((roadmap, rIdx) => {
-              const isOpenRoadmap = myAppState.openRoadmaps[rIdx];
-              return `
-                <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-red-200">
-                  <button onclick="toggleRoadmap(${rIdx})" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold p-4 text-left flex justify-between items-center transition">
-                    <span class="text-sm sm:text-base uppercase tracking-wider"><i class="fa-solid fa-layer-group mr-2"></i>${roadmap.title}</span>
-                    <i class="fa-solid fa-chevron-${isOpenRoadmap ? 'up' : 'down'} text-white"></i>
-                  </button>
-
-                  ${isOpenRoadmap ? `
-                    <div class="p-3 sm:p-4 space-y-4 bg-gray-50">
-                      ${roadmap.chapters.map(chapName => {
-                        const isChapOpen = myAppState.openChapters[chapName];
-                        const chapLectures = myAppState.lectures.filter(l => l.chapter === chapName);
-                        return `
-                          <div class="bg-rose-50/80 rounded-xl border border-rose-200 shadow-sm overflow-hidden">
-                            <button onclick="toggleChapterCollapse('${chapName.replace(/'/g, "\\'")}')" class="w-full p-3 text-left font-bold text-rose-900 text-sm flex justify-between items-center hover:bg-rose-100 transition">
-                              <span><i class="fa-solid fa-bookmark mr-2 text-rose-600"></i>${chapName}</span>
-                              <div class="flex items-center gap-3">
-                                <span class="text-xs bg-rose-200/80 text-rose-800 px-2.5 py-0.5 rounded-full font-semibold">(${chapLectures.length} bài học)</span>
-                                <i class="fa-solid fa-chevron-${isChapOpen ? 'up' : 'down'} text-rose-700"></i>
-                              </div>
-                            </button>
-
-                            ${isChapOpen ? `
-                              <div class="bg-white border-t border-rose-100 divide-y divide-gray-100">
-                                ${chapLectures.length === 0 ? `<div class="p-4 text-center text-xs text-gray-500 italic">Chưa có bài giảng nào trong chuyên đề này.</div>` : 
-                                  chapLectures.map(l => `
-                                    <div class="p-3 sm:px-4 sm:py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-gray-50 transition">
-                                      <div class="space-y-1">
-                                        <div class="flex items-center gap-2">
-                                          <i class="fa-solid fa-book-open text-blue-600 text-sm"></i>
-                                          <h4 class="font-bold text-gray-900 text-sm">${l.title}</h4>
-                                        </div>
-                                        <p class="text-xs text-gray-500">GV: ${l.instructor || 'Hai Ton'} | ${l.date || ''}</p>
-                                        ${l.description ? `<p class="text-xs text-gray-600">${l.description}</p>` : ''}
-                                      </div>
-
-                                      <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-                                        ${l.fileUrl ? `<a href="${l.fileUrl}" download="${l.fileName || 'TaiLieu'}" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Tải tài liệu"><i class="fa-solid fa-file-arrow-down"></i> <span class="hidden md:inline">Tài liệu</span></a>` : ''}
-                                        ${l.solutionUrl ? `<a href="${l.solutionUrl}" download="DapAnChiTiet" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Tải đáp án"><i class="fa-solid fa-file-lines"></i> <span class="hidden md:inline">Đáp án</span></a>` : ''}
-                                        ${l.videoUrl ? `<a href="${l.videoUrl}" target="_blank" class="bg-red-50 text-red-700 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Xem video"><i class="fa-solid fa-video"></i> <span class="hidden md:inline">Video</span></a>` : ''}
-                                        
-                                        <!-- NÚT XÓA BÀI GIẢNG (CHỈ ADMIN THẤY) -->
-                                        ${myAppState.currentUser.role === 'admin' ? `
-                                          <button onclick="deleteLecture('${l.id}')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white p-1.5 rounded-lg text-xs font-bold transition ml-1" title="Xóa bài giảng này">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                          </button>
-                                        ` : ''}
-                                      </div>
-                                    </div>
-                                  `).join('')}
-                              </div>
-                            ` : ''}
-                          </div>
-                        `;
-                      }).join('')}
+            ${myAppState.roadmaps.length === 0 ? `<div class="bg-white p-6 rounded-xl text-center text-gray-500">Chưa có lộ trình nào. Thầy/cô bấm "+ Thêm Lộ Trình" ở góc trên để tạo mới nhé!</div>` :
+              myAppState.roadmaps.map((rm) => {
+                const isOpen = myAppState.openRoadmaps[rm.id];
+                return `
+                  <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-red-200">
+                    <div class="w-full bg-red-700 hover:bg-red-800 text-white font-bold p-4 flex justify-between items-center transition">
+                      <button onclick="toggleRoadmap('${rm.id}')" class="flex-1 text-left text-sm sm:text-base uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-layer-group mr-2"></i>${rm.title}
+                      </button>
+                      <div class="flex items-center gap-2">
+                        ${myAppState.currentUser.role === 'admin' ? `
+                          <button onclick="deleteRoadmap('${rm.id}')" class="text-red-200 hover:text-white p-1 text-xs" title="Xóa lộ trình">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
+                        ` : ''}
+                        <button onclick="toggleRoadmap('${rm.id}')">
+                          <i class="fa-solid fa-chevron-${isOpen ? 'up' : 'down'} text-white"></i>
+                        </button>
+                      </div>
                     </div>
-                  ` : ''}
-                </div>
-              `;
-            }).join('')}
+
+                    ${isOpen ? `
+                      <div class="p-3 sm:p-4 space-y-4 bg-gray-50">
+                        ${(!rm.chapters || rm.chapters.length === 0) ? `<div class="text-xs text-gray-500 italic p-2">Chưa có chương nào trong lộ trình này.</div>` :
+                          rm.chapters.map((chapName, cIdx) => {
+                            const chapKey = rm.id + '_' + cIdx;
+                            const isChapOpen = myAppState.openChapters[chapKey];
+                            const chapLectures = myAppState.lectures.filter(l => l.chapter === chapName);
+                            return `
+                              <div class="bg-rose-50/80 rounded-xl border border-rose-200 shadow-sm overflow-hidden">
+                                <div class="w-full p-3 text-left font-bold text-rose-900 text-sm flex justify-between items-center hover:bg-rose-100 transition">
+                                  <button onclick="toggleChapterCollapse('${chapKey}')" class="flex-1 text-left flex items-center">
+                                    <i class="fa-solid fa-bookmark mr-2 text-rose-600"></i>${chapName}
+                                  </button>
+                                  <div class="flex items-center gap-3">
+                                    <span class="text-xs bg-rose-200/80 text-rose-800 px-2.5 py-0.5 rounded-full font-semibold">(${chapLectures.length} bài học)</span>
+                                    ${myAppState.currentUser.role === 'admin' ? `
+                                      <button onclick="deleteChapter('${rm.id}', ${cIdx})" class="text-red-500 hover:text-red-700 text-xs" title="Xóa chương này">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                      </button>
+                                    ` : ''}
+                                    <button onclick="toggleChapterCollapse('${chapKey}')">
+                                      <i class="fa-solid fa-chevron-${isChapOpen ? 'up' : 'down'} text-rose-700"></i>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                ${isChapOpen ? `
+                                  <div class="bg-white border-t border-rose-100 divide-y divide-gray-100">
+                                    ${chapLectures.length === 0 ? `<div class="p-4 text-center text-xs text-gray-500 italic">Chưa có bài giảng nào trong chuyên đề này.</div>` : 
+                                      chapLectures.map(l => `
+                                        <div class="p-3 sm:px-4 sm:py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-gray-50 transition">
+                                          <div class="space-y-1">
+                                            <div class="flex items-center gap-2">
+                                              <i class="fa-solid fa-book-open text-blue-600 text-sm"></i>
+                                              <h4 class="font-bold text-gray-900 text-sm">${l.title}</h4>
+                                            </div>
+                                            <p class="text-xs text-gray-500">GV: ${l.instructor || 'Hai Ton'} | ${l.date || ''}</p>
+                                            ${l.description ? `<p class="text-xs text-gray-600">${l.description}</p>` : ''}
+                                          </div>
+
+                                          <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                                            ${l.fileUrl ? `<a href="${l.fileUrl}" download="${l.fileName || 'TaiLieu'}" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Tải tài liệu"><i class="fa-solid fa-file-arrow-down"></i> <span class="hidden md:inline">Tài liệu</span></a>` : ''}
+                                            ${l.solutionUrl ? `<a href="${l.solutionUrl}" download="DapAnChiTiet" class="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Tải đáp án"><i class="fa-solid fa-file-lines"></i> <span class="hidden md:inline">Đáp án</span></a>` : ''}
+                                            ${l.videoUrl ? `<a href="${l.videoUrl}" target="_blank" class="bg-red-50 text-red-700 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Xem video"><i class="fa-solid fa-video"></i> <span class="hidden md:inline">Video</span></a>` : ''}
+                                            
+                                            ${myAppState.currentUser.role === 'admin' ? `
+                                              <button onclick="deleteLecture('${l.id}')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white p-1.5 rounded-lg text-xs font-bold transition ml-1" title="Xóa bài giảng">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                              </button>
+                                            ` : ''}
+                                          </div>
+                                        </div>
+                                      `).join('')}
+                                  </div>
+                                ` : ''}
+                              </div>
+                            `;
+                          })
+                        }
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              })
+            }
           </div>
         `;
       }
@@ -573,6 +587,11 @@
         `;
       }
 
+      let allChaptersList = [];
+      myAppState.roadmaps.forEach(r => {
+        if (r.chapters) allChaptersList.push(...r.chapters);
+      });
+
       rootDiv.innerHTML = `
         <div class="min-h-screen flex flex-col">
           <header class="bg-blue-600 text-white p-4 flex justify-between items-center shadow sticky top-0 z-40">
@@ -589,6 +608,46 @@
           <main class="max-w-6xl w-full mx-auto p-4 flex-1">
             ${mainArea}
           </main>
+        </div>
+
+        <!-- MODAL THÊM LỘ TRÌNH -->
+        <div id="modalRoadmap" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded p-6 max-w-md w-full space-y-3 shadow-xl">
+            <h3 class="font-bold text-lg text-red-800">Thêm Lộ Trình Mới</h3>
+            <form id="formAddRoadmap" class="space-y-3 text-sm">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Tên lộ trình (Ví dụ: LỘ TRÌNH T3...)</label>
+                <input type="text" id="rmTitle" required class="w-full p-2 border rounded text-xs" placeholder="Nhập tên lộ trình...">
+              </div>
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onclick="closeModal('modalRoadmap')" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
+                <button type="submit" class="bg-red-700 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-red-800">Tạo Lộ Trình</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- MODAL THÊM CHƯƠNG VÀO LỘ TRÌNH -->
+        <div id="modalChapter" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded p-6 max-w-md w-full space-y-3 shadow-xl">
+            <h3 class="font-bold text-lg text-amber-800">Thêm Chương / Chuyên Đề</h3>
+            <form id="formAddChapter" class="space-y-3 text-sm">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Chọn lộ trình</label>
+                <select id="selectRmId" class="w-full p-2 border rounded text-xs bg-white">
+                  ${myAppState.roadmaps.map(r => `<option value="${r.id}">${r.title}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Tên chương / Chuyên đề</label>
+                <input type="text" id="chapTitle" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: Chương I: ...">
+              </div>
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onclick="closeModal('modalChapter')" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
+                <button type="submit" class="bg-amber-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-amber-700">Thêm Chương</button>
+              </div>
+            </form>
+          </div>
         </div>
 
         <!-- MODAL ĐĂNG BÀI GIẢNG -->
@@ -612,9 +671,9 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold mb-1">Chương / Chuyên đề thuộc lộ trình</label>
+                  <label class="block text-xs font-semibold mb-1">Thuộc chuyên đề / Chương</label>
                   <select id="lecChapter" class="w-full p-2 border rounded text-xs bg-white">
-                    ${roadmapsData.flatMap(r => r.chapters).map(c => `<option value="${c}">${c}</option>`).join('')}
+                    ${allChaptersList.map(c => `<option value="${c}">${c}</option>`).join('')}
                   </select>
                 </div>
               </div>
@@ -648,6 +707,38 @@
         </div>
       `;
 
+      if (document.getElementById('formAddRoadmap')) {
+        document.getElementById('formAddRoadmap').onsubmit = (e) => {
+          e.preventDefault();
+          const t = document.getElementById('rmTitle').value.trim();
+          db.ref('roadmaps').push({ title: t, chapters: [] }, err => {
+            if (!err) {
+              alert('Đã tạo lộ trình thành công!');
+              closeModal('modalRoadmap');
+            }
+          });
+        };
+      }
+
+      if (document.getElementById('formAddChapter')) {
+        document.getElementById('formAddChapter').onsubmit = (e) => {
+          e.preventDefault();
+          const rmId = document.getElementById('selectRmId').value;
+          const chapTitle = document.getElementById('chapTitle').value.trim();
+          const rm = myAppState.roadmaps.find(r => r.id === rmId);
+          if (rm) {
+            let chapters = rm.chapters || [];
+            chapters.push(chapTitle);
+            db.ref('roadmaps/' + rmId).update({ chapters: chapters }, err => {
+              if (!err) {
+                alert('Đã thêm chương thành công!');
+                closeModal('modalChapter');
+              }
+            });
+          }
+        };
+      }
+
       if (document.getElementById('formAddLec')) {
         document.getElementById('formAddLec').onsubmit = (e) => {
           e.preventDefault();
@@ -674,8 +765,6 @@
               if (!err) {
                 alert('Đăng bài giảng thành công!');
                 closeModal('modalLec');
-              } else {
-                alert('Lỗi lưu dữ liệu: ' + err.message);
               }
             });
           };
@@ -684,7 +773,6 @@
             if (solutionInput && solutionInput.files && solutionInput.files[0]) {
               const reader = new FileReader();
               reader.onload = (ev) => { sUrl = ev.target.result; saveLectureData(); };
-              reader.onerror = () => { alert('Lỗi đọc file đáp án!'); };
               reader.readAsDataURL(solutionInput.files[0]);
             } else {
               saveLectureData();
@@ -695,7 +783,6 @@
             fName = fileInput.files[0].name;
             const reader = new FileReader();
             reader.onload = (ev) => { fUrl = ev.target.result; readSolution(); };
-            reader.onerror = () => { alert('Lỗi đọc file tài liệu!'); };
             reader.readAsDataURL(fileInput.files[0]);
           } else {
             readSolution();
