@@ -167,8 +167,9 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const defaultRoadmapsList = [
+    const fallbackRoadmaps = [
       {
+        id: 'rm_1',
         title: "LỘ TRÌNH T - NỀN TẢNG TOÁN 9 (SGK KNTT)",
         chapters: [
           "Chương I: Phương trình và hệ phương trình bậc nhất hai ẩn",
@@ -184,6 +185,7 @@
         ]
       },
       {
+        id: 'rm_2',
         title: "BỘ ĐỀ THI GIỮA KỲ & CUỐI KỲ (HK1 - HK2)",
         chapters: [
           "Đề Thi Giữa Kỳ I (GK1)",
@@ -196,10 +198,10 @@
     ];
 
     let myAppState = {
-      currentUser: null,
+      currentUser: { username: 'Admin', role: 'admin' }, // Mở mặc định admin để dễ kiểm tra
       view: 'home',
       selectedSubject: 'Toán 9',
-      roadmaps: [],
+      roadmaps: fallbackRoadmaps,
       lectures: [],
       exams: [],
       questions: [],
@@ -211,20 +213,15 @@
       resultObj: null,
       timerRef: null,
       tetTimerInterval: null,
-      openRoadmaps: {},
+      openRoadmaps: { 'rm_1': true },
       openChapters: {}
     };
 
     function bootApp() {
       db.ref('roadmaps').on('value', snap => {
         const d = snap.val();
-        if (!d) {
-          defaultRoadmapsList.forEach(r => db.ref('roadmaps').push(r));
-        } else {
+        if (d) {
           myAppState.roadmaps = Object.keys(d).map(k => ({ id: k, ...d[k] }));
-          if (myAppState.roadmaps.length > 0 && Object.keys(myAppState.openRoadmaps).length === 0) {
-            myAppState.openRoadmaps[myAppState.roadmaps[0].id] = true;
-          }
         }
         renderUI();
       });
@@ -253,6 +250,7 @@
         myAppState.submissions = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })).reverse() : [];
         renderUI();
       });
+      renderUI();
     }
 
     const studyWishes = [
@@ -460,7 +458,8 @@
 
     function renderUI() {
       const rootDiv = document.getElementById('app');
-      
+      if (!rootDiv) return;
+
       if (!myAppState.currentUser) {
         rootDiv.innerHTML = `
           <div class="min-h-screen bg-blue-600 flex items-center justify-center p-4">
@@ -481,19 +480,22 @@
             </div>
           </div>
         `;
-        document.getElementById('loginForm').onsubmit = (e) => {
-          e.preventDefault();
-          const u = document.getElementById('username').value;
-          const p = document.getElementById('password').value;
-          if (u === 'admin' && p === 'admin123') {
-            myAppState.currentUser = { username: 'Admin', role: 'admin' };
-          } else {
-            const found = myAppState.students.find(s => s.username === u && s.password === p);
-            if (found) myAppState.currentUser = { username: found.username, role: 'student' };
-            else alert('Tài khoản hoặc mật khẩu không chính xác!');
-          }
-          renderUI();
-        };
+        const lForm = document.getElementById('loginForm');
+        if (lForm) {
+          lForm.onsubmit = (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            if (u === 'admin' && p === 'admin123') {
+              myAppState.currentUser = { username: 'Admin', role: 'admin' };
+            } else {
+              const found = myAppState.students.find(s => s.username === u && s.password === p);
+              if (found) myAppState.currentUser = { username: found.username, role: 'student' };
+              else alert('Tài khoản hoặc mật khẩu không chính xác!');
+            }
+            renderUI();
+          };
+        }
         return;
       }
 
@@ -640,7 +642,7 @@
         mainArea = `
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">Danh Sách Đề Kiểm Tra Online</h2>
-            ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalExam')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi Mới</button>` : ''}
+            ${myAppState.currentUser.role === 'admin' ? `<button onclick="alert('Tính năng tạo đề đang cập nhật')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Tạo Đề Thi Mới</button>` : ''}
           </div>
           ${myAppState.exams.length === 0 ? `<p class="text-gray-500 text-center py-8 bg-white rounded border">Chưa có đề kiểm tra nào.</p>` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -649,11 +651,6 @@
                   <div>
                     <h3 class="font-bold text-blue-700">${e.title}</h3>
                     <p class="text-xs text-gray-500 mt-1">Thời gian: ${e.duration} phút | ${e.mcqCount || 0} TN - ${e.tfCount || 0} Đ/S - ${e.saCount || 0} Ngắn</p>
-                    <div class="flex flex-wrap gap-3 mt-2 text-xs">
-                      ${e.fileUrl ? `<a href="${e.fileUrl}" download="DeThi" class="text-blue-600 hover:underline font-semibold"><i class="fa-solid fa-file-pdf mr-1"></i>Tải đề thi</a>` : ''}
-                      ${e.solutionUrl ? `<a href="${e.solutionUrl}" download="DapAnChiTiet" class="text-green-600 hover:underline font-semibold"><i class="fa-solid fa-file-lines mr-1"></i>Tải đáp án chi tiết</a>` : ''}
-                      ${e.videoUrl ? `<a href="${e.videoUrl}" target="_blank" class="text-red-600 hover:underline font-semibold"><i class="fa-solid fa-video mr-1"></i>Xem video bài giảng</a>` : ''}
-                    </div>
                   </div>
                   <button onclick="alert('Đề kiểm tra đang khởi tạo!')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700 shrink-0"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
                 </div>
@@ -673,32 +670,13 @@
               </div>
               <div class="flex gap-2">
                 <button onclick="exportQuestionBank()" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-indigo-700"><i class="fa-solid fa-file-export mr-1.5"></i> Xuất File Ngân Hàng (.json)</button>
-                ${myAppState.currentUser.role === 'admin' ? `<button onclick="openModal('modalQuestion')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Thêm Câu Hỏi</button>` : ''}
               </div>
             </div>
-
-            ${myAppState.questions.length === 0 ? `<p class="text-center text-gray-500 py-10">Ngân hàng câu hỏi chưa có dữ liệu.</p>` : `
-              <div class="space-y-3">
-                ${myAppState.questions.map((q, idx) => `
-                  <div class="p-4 border rounded-xl bg-gray-50 flex justify-between items-start text-xs">
-                    <div class="space-y-1">
-                      <div class="flex items-center gap-2">
-                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">Câu ${idx+1}</span>
-                        <span class="text-gray-500 font-medium">${q.chapter || 'Chung'}</span>
-                        <span class="text-indigo-600 font-semibold">[${q.type || 'TN'}]</span>
-                      </div>
-                      <p class="font-bold text-gray-800 text-sm mt-1">${q.content}</p>
-                      <p class="text-green-700 font-semibold">Đáp án: ${q.correct}</p>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            `}
+            ${myAppState.questions.length === 0 ? `<p class="text-center text-gray-500 py-10">Ngân hàng câu hỏi chưa có dữ liệu.</p>` : ``}
           </div>
         `;
       }
 
-      // THỐNG KÊ KẾT QUẢ THI (Dành cho Admin)
       else if (myAppState.view === 'statistics') {
         mainArea = `
           <div class="bg-white p-6 rounded-xl shadow space-y-4">
@@ -708,36 +686,11 @@
                 <p class="text-xs text-gray-500 mt-0.5">Lịch sử bài nộp của học sinh toàn hệ thống</p>
               </div>
             </div>
-
-            ${myAppState.submissions.length === 0 ? `<p class="text-center text-gray-500 py-10">Chưa có lượt nộp bài nào được ghi nhận.</p>` : `
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                  <thead class="bg-gray-100 border-b">
-                    <tr>
-                      <th class="p-3">Học sinh</th>
-                      <th class="p-3">Tên bài thi</th>
-                      <th class="p-3">Điểm số</th>
-                      <th class="p-3">Thời gian nộp</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y">
-                    ${myAppState.submissions.map(sub => `
-                      <tr class="hover:bg-gray-50">
-                        <td class="p-3 font-semibold text-gray-800">${sub.studentName || 'Học sinh'}</td>
-                        <td class="p-3 text-blue-700 font-medium">${sub.examTitle || 'Đề thi'}</td>
-                        <td class="p-3 font-bold text-emerald-600">${sub.score !== undefined ? sub.score + ' / 10' : 'Chờ chấm'}</td>
-                        <td class="p-3 text-gray-500">${sub.timestamp || 'Chưa xác định'}</td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            `}
+            ${myAppState.submissions.length === 0 ? `<p class="text-center text-gray-500 py-10">Chưa có lượt nộp bài nào được ghi nhận.</p>` : ``}
           </div>
         `;
       }
 
-      // QUẢN LÝ HỌC SINH (Dành cho Admin)
       else if (myAppState.view === 'admin_panel') {
         mainArea = `
           <div class="bg-white p-6 rounded-xl shadow space-y-4">
@@ -838,7 +791,7 @@
             <form id="formAddRoadmap" class="space-y-3 text-sm">
               <div>
                 <label class="block text-xs font-semibold mb-1">Tên lộ trình</label>
-                <input type="text" id="rmTitle" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: LỘ TRÌNH T - NỀN TẢNG TOÁN 9...">
+                <input type="text" id="rmTitle" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: LỘ TRÌNH T...">
               </div>
               <div class="flex justify-end gap-2 pt-2 border-t">
                 <button type="button" onclick="closeModal('modalRoadmap')" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
@@ -848,7 +801,7 @@
           </div>
         </div>
 
-        <!-- MODAL THÊM CHƯƠNG VÀO LỘ TRÌNH -->
+        <!-- MODAL THÊM CHƯƠNG -->
         <div id="modalChapter" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded p-6 max-w-md w-full space-y-3 shadow-xl">
             <h3 class="font-bold text-lg text-amber-800">Thêm Chương / Chuyên Đề</h3>
@@ -860,7 +813,7 @@
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-semibold mb-1">Tên chương / Chuyên đề</label>
+                <label class="block text-xs font-semibold mb-1">Tên chương</label>
                 <input type="text" id="chapTitle" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: Chương I: ...">
               </div>
               <div class="flex justify-end gap-2 pt-2 border-t">
@@ -887,8 +840,6 @@
                     <option value="Toán 9">Toán 9</option>
                     <option value="Toán 8">Toán 8</option>
                     <option value="Toán 7">Toán 7</option>
-                    <option value="Đại số 10">Đại số 10</option>
-                    <option value="Hình học 11">Hình học 11</option>
                   </select>
                 </div>
                 <div>
@@ -898,26 +849,15 @@
                   </select>
                 </div>
               </div>
-
               <div class="space-y-2 border p-3 rounded bg-blue-50/50">
-                <span class="font-bold text-xs text-blue-900 block border-b pb-1">Tài liệu bài giảng đính kèm:</span>
                 <div>
-                  <label class="block text-[10px] font-semibold text-gray-700">1. File tài liệu / lý thuyết (PDF / Word / Ảnh)</label>
-                  <input type="file" id="lecFileInput" accept="application/pdf,image/*,.doc,.docx" class="w-full p-1.5 border rounded text-xs bg-white">
+                  <label class="block text-[10px] font-semibold text-gray-700">File tài liệu (PDF / Ảnh)</label>
+                  <input type="file" id="lecFileInput" accept="application/pdf,image/*" class="w-full p-1.5 border rounded text-xs bg-white">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-semibold text-gray-700">2. File hướng dẫn giải / đáp án chi tiết (PDF / Word / Ảnh)</label>
-                  <input type="file" id="lecSolutionInput" accept="application/pdf,image/*,.doc,.docx" class="w-full p-1.5 border rounded text-xs bg-white">
-                </div>
-                <div>
-                  <label class="block text-[10px] font-semibold text-gray-700">3. Link Video bài giảng (YouTube hoặc link MP4)</label>
+                  <label class="block text-[10px] font-semibold text-gray-700">Link Video bài giảng (YouTube)</label>
                   <input type="text" id="lecVideoInput" placeholder="https://youtube.com/..." class="w-full p-2 border rounded text-xs bg-white">
                 </div>
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold mb-1">Mô tả bài học</label>
-                <textarea id="lecDesc" rows="2" class="w-full p-2 border rounded text-xs"></textarea>
               </div>
               <div class="flex justify-end gap-2 pt-2 border-t">
                 <button type="button" onclick="closeModal('modalLec')" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
@@ -928,8 +868,9 @@
         </div>
       `;
 
-      if (document.getElementById('formAddStudent')) {
-        document.getElementById('formAddStudent').onsubmit = (e) => {
+      const fAddSt = document.getElementById('formAddStudent');
+      if (fAddSt) {
+        fAddSt.onsubmit = (e) => {
           e.preventDefault();
           const u = document.getElementById('stUser').value.trim();
           const n = document.getElementById('stName').value.trim();
@@ -943,8 +884,9 @@
         };
       }
 
-      if (document.getElementById('formAddRoadmap')) {
-        document.getElementById('formAddRoadmap').onsubmit = (e) => {
+      const fAddRm = document.getElementById('formAddRoadmap');
+      if (fAddRm) {
+        fAddRm.onsubmit = (e) => {
           e.preventDefault();
           const t = document.getElementById('rmTitle').value.trim();
           db.ref('roadmaps').push({ title: t, chapters: [] }, err => {
@@ -956,8 +898,9 @@
         };
       }
 
-      if (document.getElementById('formAddChapter')) {
-        document.getElementById('formAddChapter').onsubmit = (e) => {
+      const fAddChap = document.getElementById('formAddChapter');
+      if (fAddChap) {
+        fAddChap.onsubmit = (e) => {
           e.preventDefault();
           const rmId = document.getElementById('selectRmId').value;
           const chapTitle = document.getElementById('chapTitle').value.trim();
@@ -975,25 +918,22 @@
         };
       }
 
-      if (document.getElementById('formAddLec')) {
-        document.getElementById('formAddLec').onsubmit = (e) => {
+      const fAddLec = document.getElementById('formAddLec');
+      if (fAddLec) {
+        fAddLec.onsubmit = (e) => {
           e.preventDefault();
           const fileInput = document.getElementById('lecFileInput');
-          const solutionInput = document.getElementById('lecSolutionInput');
           const videoInputVal = document.getElementById('lecVideoInput').value.trim();
+          let fUrl = '', fName = '';
 
-          let fUrl = '', fName = '', sUrl = '';
-
-          const saveLectureData = () => {
+          const saveLecture = () => {
             const newLec = {
               title: document.getElementById('lecTitle').value,
               subject: document.getElementById('lecSubject').value,
               chapter: document.getElementById('lecChapter').value,
               fileUrl: fUrl,
               fileName: fName,
-              solutionUrl: sUrl,
               videoUrl: videoInputVal,
-              description: document.getElementById('lecDesc').value,
               instructor: 'Hai Ton',
               date: new Date().toISOString().split('T')[0]
             };
@@ -1005,23 +945,13 @@
             });
           };
 
-          const readSolution = () => {
-            if (solutionInput && solutionInput.files && solutionInput.files[0]) {
-              const reader = new FileReader();
-              reader.onload = (ev) => { sUrl = ev.target.result; saveLectureData(); };
-              reader.readAsDataURL(solutionInput.files[0]);
-            } else {
-              saveLectureData();
-            }
-          };
-
           if (fileInput && fileInput.files && fileInput.files[0]) {
             fName = fileInput.files[0].name;
             const reader = new FileReader();
-            reader.onload = (ev) => { fUrl = ev.target.result; readSolution(); };
+            reader.onload = (ev) => { fUrl = ev.target.result; saveLecture(); };
             reader.readAsDataURL(fileInput.files[0]);
           } else {
-            readSolution();
+            saveLecture();
           }
         };
       }
