@@ -167,7 +167,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // DANH SÁCH LỘ TRÌNH MẶC ĐỊNH SẼ KHỞI TẠO TRÊN FIREBASE NẾU CHƯA CÓ
     const defaultRoadmapsList = [
       {
         title: "LỘ TRÌNH T - NỀN TẢNG TOÁN 9 (SGK KNTT)",
@@ -220,7 +219,6 @@
       db.ref('roadmaps').on('value', snap => {
         const d = snap.val();
         if (!d) {
-          // Khởi tạo các lộ trình mặc định nếu Firebase trống
           defaultRoadmapsList.forEach(r => db.ref('roadmaps').push(r));
         } else {
           myAppState.roadmaps = Object.keys(d).map(k => ({ id: k, ...d[k] }));
@@ -268,7 +266,7 @@
       return studyWishes[dayOfYear % studyWishes.length];
     }
 
-    // CHỨC NĂNG ĐẾM NGƯỢC TẾT VÀ SỰ KIỆN
+    // ĐẾM NGƯỢC TẾT NĂM MỚI
     function startTetCountdown() {
       if (myAppState.tetTimerInterval) clearInterval(myAppState.tetTimerInterval);
       const tet2027Date = new Date('2027-02-06T00:00:00');
@@ -447,6 +445,19 @@
       }
     }
 
+    function deleteStudent(id) {
+      if (confirm('Thầy/cô có chắc muốn xóa học sinh này không?')) {
+        db.ref('students/' + id).remove(err => {
+          if (!err) alert('Đã xóa tài khoản học sinh!');
+        });
+      }
+    }
+
+    function logOut() {
+      myAppState.currentUser = null;
+      renderUI();
+    }
+
     function renderUI() {
       const rootDiv = document.getElementById('app');
       
@@ -504,7 +515,7 @@
         const subjects = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
 
         mainArea = `
-          <!-- BANNER ĐẾM NGƯỢC NĂM MỚI BAN ĐẦU -->
+          <!-- BANNER ĐẾM NGƯỢC NĂM MỚI -->
           <div id="tetBannerContent" class="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600 text-white p-4 sm:p-5 rounded-2xl shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-blue-400">
             <div class="space-y-2 text-center md:text-left flex-1">
               <div class="text-[11px] uppercase tracking-widest text-yellow-300 font-bold flex items-center justify-center md:justify-start gap-1">
@@ -644,7 +655,7 @@
                       ${e.videoUrl ? `<a href="${e.videoUrl}" target="_blank" class="text-red-600 hover:underline font-semibold"><i class="fa-solid fa-video mr-1"></i>Xem video bài giảng</a>` : ''}
                     </div>
                   </div>
-                  <button onclick="launchExam('${e.id}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700 shrink-0"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
+                  <button onclick="alert('Đề kiểm tra đang khởi tạo!')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700 shrink-0"><i class="fa-solid fa-pen-to-square mr-1"></i> Làm bài</button>
                 </div>
               `).join('')}
             </div>
@@ -679,9 +690,93 @@
                       <p class="font-bold text-gray-800 text-sm mt-1">${q.content}</p>
                       <p class="text-green-700 font-semibold">Đáp án: ${q.correct}</p>
                     </div>
-                    ${myAppState.currentUser.role === 'admin' ? `<button onclick="deleteQuestion('${q.id}')" class="text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i></button>` : ''}
                   </div>
                 `).join('')}
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      // THỐNG KÊ KẾT QUẢ THI (Dành cho Admin)
+      else if (myAppState.view === 'statistics') {
+        mainArea = `
+          <div class="bg-white p-6 rounded-xl shadow space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+              <div>
+                <h2 class="text-xl font-bold text-blue-800"><i class="fa-solid fa-chart-column mr-2"></i>Thống Kê Kết Quả Làm Bài</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Lịch sử bài nộp của học sinh toàn hệ thống</p>
+              </div>
+            </div>
+
+            ${myAppState.submissions.length === 0 ? `<p class="text-center text-gray-500 py-10">Chưa có lượt nộp bài nào được ghi nhận.</p>` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-gray-100 border-b">
+                    <tr>
+                      <th class="p-3">Học sinh</th>
+                      <th class="p-3">Tên bài thi</th>
+                      <th class="p-3">Điểm số</th>
+                      <th class="p-3">Thời gian nộp</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y">
+                    ${myAppState.submissions.map(sub => `
+                      <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-semibold text-gray-800">${sub.studentName || 'Học sinh'}</td>
+                        <td class="p-3 text-blue-700 font-medium">${sub.examTitle || 'Đề thi'}</td>
+                        <td class="p-3 font-bold text-emerald-600">${sub.score !== undefined ? sub.score + ' / 10' : 'Chờ chấm'}</td>
+                        <td class="p-3 text-gray-500">${sub.timestamp || 'Chưa xác định'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      // QUẢN LÝ HỌC SINH (Dành cho Admin)
+      else if (myAppState.view === 'admin_panel') {
+        mainArea = `
+          <div class="bg-white p-6 rounded-xl shadow space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+              <div>
+                <h2 class="text-xl font-bold text-blue-800"><i class="fa-solid fa-users-gear mr-2"></i>Quản Lý Học Sinh</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Danh sách tài khoản học sinh truy cập hệ thống</p>
+              </div>
+              <button onclick="openModal('modalAddStudent')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-green-700">+ Thêm Học Sinh Mới</button>
+            </div>
+
+            ${myAppState.students.length === 0 ? `<p class="text-center text-gray-500 py-10">Chưa có học sinh nào trong danh sách. Hãy bấm "+ Thêm Học Sinh Mới" ở góc phải!</p>` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-gray-100 border-b">
+                    <tr>
+                      <th class="p-3">STT</th>
+                      <th class="p-3">Tên đăng nhập</th>
+                      <th class="p-3">Họ và tên</th>
+                      <th class="p-3">Mật khẩu</th>
+                      <th class="p-3 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y">
+                    ${myAppState.students.map((st, i) => `
+                      <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-600">${i + 1}</td>
+                        <td class="p-3 font-semibold text-blue-700">${st.username}</td>
+                        <td class="p-3 text-gray-800 font-medium">${st.fullname || st.username}</td>
+                        <td class="p-3 text-gray-500 font-mono">${st.password}</td>
+                        <td class="p-3 text-right">
+                          <button onclick="deleteStudent('${st.id}')" class="text-red-600 hover:text-red-800 font-bold p-1" title="Xóa học sinh">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
               </div>
             `}
           </div>
@@ -702,13 +797,38 @@
             <div class="flex items-center gap-4 text-sm font-medium">
               ${navButtons}
               <span class="bg-blue-700 px-3 py-1 rounded">${myAppState.currentUser.username}</span>
-              <button onclick="logOut()" class="text-red-200 hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></button>
+              <button onclick="logOut()" class="text-red-200 hover:text-white" title="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
           </header>
 
           <main class="max-w-6xl w-full mx-auto p-4 flex-1">
             ${mainArea}
           </main>
+        </div>
+
+        <!-- MODAL THÊM HỌC SINH MỚI -->
+        <div id="modalAddStudent" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded p-6 max-w-md w-full space-y-3 shadow-xl">
+            <h3 class="font-bold text-lg text-blue-800">Thêm Học Sinh Mới</h3>
+            <form id="formAddStudent" class="space-y-3 text-sm">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Tên đăng nhập</label>
+                <input type="text" id="stUser" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: hocsinh1">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Họ và tên học sinh</label>
+                <input type="text" id="stName" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: Nguyễn Văn A">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Mật khẩu</label>
+                <input type="text" id="stPass" required class="w-full p-2 border rounded text-xs" placeholder="Ví dụ: 123456">
+              </div>
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onclick="closeModal('modalAddStudent')" class="px-3 py-1.5 border rounded text-xs">Hủy</button>
+                <button type="submit" class="bg-green-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-green-700">Lưu Học Sinh</button>
+              </div>
+            </form>
+          </div>
         </div>
 
         <!-- MODAL THÊM LỘ TRÌNH -->
@@ -807,6 +927,21 @@
           </div>
         </div>
       `;
+
+      if (document.getElementById('formAddStudent')) {
+        document.getElementById('formAddStudent').onsubmit = (e) => {
+          e.preventDefault();
+          const u = document.getElementById('stUser').value.trim();
+          const n = document.getElementById('stName').value.trim();
+          const p = document.getElementById('stPass').value.trim();
+          db.ref('students').push({ username: u, fullname: n, password: p }, err => {
+            if (!err) {
+              alert('Đã thêm học sinh mới thành công!');
+              closeModal('modalAddStudent');
+            }
+          });
+        };
+      }
 
       if (document.getElementById('formAddRoadmap')) {
         document.getElementById('formAddRoadmap').onsubmit = (e) => {
