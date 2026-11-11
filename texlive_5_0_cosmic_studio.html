@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeXLive 5.0 - TeXstudio Cosmic Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- KaTeX CSS & JS for real-time fast math compilation -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <!-- CodeMirror for futuristic syntax highlighted TeX Editor -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/stex/stex.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cosmic: {
+                            bg: '#090A15',
+                            card: 'rgba(18, 20, 42, 0.75)',
+                            border: '#1F295D',
+                            accent: '#00F0FF',
+                            purple: '#7000FF',
+                            pink: '#FF007A',
+                            gold: '#FFD700'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        fira: ['Fira Code', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Glowing & Cosmic Glassmorphic Aesthetics */
+        body {
+            background-color: #05060f;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(112, 0, 255, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(255, 0, 122, 0.08) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: #E2E8F0;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Panel */
+        .cosmic-glass {
+            background: rgba(13, 16, 38, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .cosmic-glow-btn {
+            background: linear-gradient(135deg, rgba(112, 0, 255, 0.8), rgba(0, 240, 255, 0.8));
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        .cosmic-glow-btn:hover {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.8), 0 0 10px rgba(112, 0, 255, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* CodeMirror Customization */
+        .CodeMirror {
+            height: 100% !important;
+            font-family: 'Fira Code', monospace !important;
+            font-size: 13.5px;
+            background: rgba(9, 10, 21, 0.85) !important;
+            color: #E2E8F0 !important;
+        }
+        .CodeMirror-gutters {
+            background: #0D1026 !important;
+            border-right: 1px solid rgba(0, 240, 255, 0.1) !important;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(9, 10, 21, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 240, 255, 0.3);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 240, 255, 0.6);
+        }
+
+        /* Paper Render Simulation for Cosmic Exam */
+        .exam-paper {
+            background: #FFFFFF;
+            color: #0F172A;
+            box-shadow: 0 10px 40px rgba(0, 240, 255, 0.2);
+            min-height: 100%;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        /* Stars Canvas */
+        #stars-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col font-sans select-none overflow-hidden">
+    <!-- Starfield Animation Canvas -->
+    <canvas id="stars-canvas"></canvas>
+
+    <!-- TOP MENUBAR / NAVIGATION HEADER -->
+    <header class="relative z-10 cosmic-glass border-b border-cosmic-border px-4 py-2 flex items-center justify-between text-xs">
+        <div class="flex items-center space-x-4">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cosmic-purple to-cosmic-accent flex items-center justify-center font-orbitron font-bold text-white shadow-lg shadow-cosmic-accent/30">
+                    TeX
+                </div>
+                <div>
+                    <h1 class="font-orbitron font-bold tracking-wider text-sm bg-gradient-to-r from-cosmic-accent via-white to-cosmic-pink bg-clip-text text-transparent">
+                        TEXLIVE 5.0
+                    </h1>
+                    <p class="text-[9px] text-cyan-400/80 font-mono tracking-widest uppercase">TeXstudio Cosmic Edition v5.0.9</p>
+                </div>
+            </div>
+
+            <!-- Top Menu Options -->
+            <nav class="hidden md:flex items-center space-x-1 text-gray-300 font-medium pl-4 border-l border-gray-700/50">
+                <div class="px-2 py-1 hover:bg-cosmic-purple/30 hover:text-cyan-300 rounded cursor-pointer transition">Tập tin (File)</div>
+                <div class="px-2 py-1 hover:bg-cosmic-purple/30 hover:text-cyan-300 rounded cursor-pointer transition">Chỉnh sửa</div>
+                <div id="btn-compile-menu" class="px-2 py-1 hover:bg-cosmic-purple/30 hover:text-cyan-300 rounded cursor-pointer transition text-cyan-400 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-play text-xs text-green-400"></i> Biên dịch (F5)
+                </div>
+                <div class="px-2 py-1 hover:bg-cosmic-purple/30 hover:text-cyan-300 rounded cursor-pointer transition">Chèn Toán</div>
+                <div class="px-2 py-1 hover:bg-cosmic-purple/30 hover:text-cyan-300 rounded cursor-pointer transition">Cấu trúc đề</div>
+                <div id="btn-export-word-menu" class="px-2 py-1 hover:bg-blue-600/30 hover:text-blue-300 rounded cursor-pointer transition text-blue-400 flex items-center gap-1">
+                    <i class="fa-solid fa-file-word"></i> Xuất Word (.docx)
+                </div>
+            </nav>
+        </div>
+
+        <!-- Action Control Buttons -->
+        <div class="flex items-center space-x-3">
+            <!-- Compilation Speed Indicator -->
+            <div class="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full bg-cosmic-bg/80 border border-cyan-500/30 text-[11px] font-mono">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-cyan-300">Biên dịch Siêu tốc: <strong id="compile-time" class="text-white">12 ms</strong></span>
+            </div>
+
+            <!-- Fast Compile Button -->
+            <button id="btn-fast-compile" class="cosmic-glow-btn px-4 py-1.5 rounded-md font-orbitron text-xs font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-bolt-lightning text-yellow-300"></i>
+                <span>BIÊN DỊCH NHANH</span>
+            </button>
+
+            <!-- Export to Word Button -->
+            <button id="btn-export-word" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md font-semibold text-xs flex items-center space-x-1.5 transition shadow-lg shadow-blue-600/30 border border-blue-400/40">
+                <i class="fa-solid fa-file-word text-sm"></i>
+                <span>Xuất Word</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN IDE WORKSPACE split in 3 panels: Sidebar, Code Editor, Real-time PDF Render -->
+    <div class="relative z-10 flex-1 flex overflow-hidden">
+        
+        <!-- LEFT SIDEBAR: TEX SYMBOLS & TEMPLATES -->
+        <aside class="w-64 cosmic-glass border-r border-cosmic-border flex flex-col shrink-0">
+            <!-- Sidebar Navigation Tabs -->
+            <div class="flex border-b border-cosmic-border text-xs font-orbitron bg-cosmic-bg/40">
+                <button id="tab-symbols-btn" class="flex-1 py-2.5 text-center font-bold text-cyan-400 border-b-2 border-cyan-400 bg-cosmic-purple/20">Ký hiệu</button>
+                <button id="tab-templates-btn" class="flex-1 py-2.5 text-center font-bold text-gray-400 hover:text-cyan-300 transition">Mẫu Đề Thi</button>
+            </div>
+
+            <!-- TAB 1: SYMBOLS MATRIX -->
+            <div id="tab-symbols-content" class="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
+                <div>
+                    <h3 class="text-[11px] font-mono uppercase text-cyan-400 mb-2 flex items-center gap-1 font-semibold">
+                        <i class="fa-solid fa-square-root-variable"></i> Ký hiệu Toán Vũ trụ
+                    </h3>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <button onclick="insertTex('\\alpha')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\alpha$$</button>
+                        <button onclick="insertTex('\\beta')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\beta$$</button>
+                        <button onclick="insertTex('\\gamma')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\gamma$$</button>
+                        <button onclick="insertTex('\\infty')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\infty$$</button>
+                        <button onclick="insertTex('\\sum_{i=1}^{n}')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\sum$$</button>
+                        <button onclick="insertTex('\\int_{a}^{b}')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\int$$</button>
+                        <button onclick="insertTex('\\lim_{x \\to \\infty}')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\lim$$</button>
+                        <button onclick="insertTex('\\sqrt{x}')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\sqrt{x}$$</button>
+                        <button onclick="insertTex('\\frac{a}{b}')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\frac{a}{b}$$</button>
+                        <button onclick="insertTex('\\partial')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\partial$$</button>
+                        <button onclick="insertTex('\\nabla')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\nabla$$</button>
+                        <button onclick="insertTex('\\in')" class="p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/40 border border-slate-700/60 rounded text-center font-mono text-cyan-200 hover:border-cyan-400 transition">$$\in$$</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-[11px] font-mono uppercase text-cyan-400 mb-2 flex items-center gap-1 font-semibold">
+                        <i class="fa-solid fa-cube"></i> Môi trường & Khung Đề
+                    </h3>
+                    <div class="space-y-1.5">
+                        <button onclick="insertSnippet('question')" class="w-full text-left p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/30 border border-slate-700/60 rounded text-xs flex justify-between items-center transition">
+                            <span class="text-gray-200">Câu hỏi trắc nghiệm</span>
+                            <i class="fa-solid fa-plus text-cyan-400 text-[10px]"></i>
+                        </button>
+                        <button onclick="insertSnippet('matrix')" class="w-full text-left p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/30 border border-slate-700/60 rounded text-xs flex justify-between items-center transition">
+                            <span class="text-gray-200">Ma trận Ma trận 3x3</span>
+                            <i class="fa-solid fa-plus text-cyan-400 text-[10px]"></i>
+                        </button>
+                        <button onclick="insertSnippet('box')" class="w-full text-left p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/30 border border-slate-700/60 rounded text-xs flex justify-between items-center transition">
+                            <span class="text-gray-200">Hộp Ghi chú Vũ trụ</span>
+                            <i class="fa-solid fa-plus text-cyan-400 text-[10px]"></i>
+                        </button>
+                        <button onclick="insertSnippet('solution')" class="w-full text-left p-2 bg-cosmic-bg/60 hover:bg-cosmic-purple/30 border border-slate-700/60 rounded text-xs flex justify-between items-center transition">
+                            <span class="text-gray-200">Lời giải chi tiết</span>
+                            <i class="fa-solid fa-plus text-cyan-400 text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-cosmic-purple/15 border border-cosmic-purple/40 rounded-lg text-slate-300 text-[11px]">
+                    <p class="font-semibold text-cyan-300 mb-1"><i class="fa-solid fa-lightbulb text-yellow-400"></i> Hướng dẫn Siêu tốc:</p>
+                    <p>Hệ thống tự động biên dịch trực tiếp (Auto-Compile) mỗi khi gõ LaTeX. Bấm <b>F5</b> hoặc <b>Ctrl+Enter</b> để ép biên dịch lại.</p>
+                </div>
+            </div>
+
+            <!-- TAB 2: TEMPLATES SELECTOR -->
+            <div id="tab-templates-content" class="hidden flex-1 overflow-y-auto p-3 space-y-3 text-xs">
+                <div onclick="loadTemplate('cosmic')" class="p-3 bg-cosmic-bg/70 hover:bg-cosmic-purple/40 border border-cyan-500/40 rounded-lg cursor-pointer transition">
+                    <div class="font-bold text-cyan-300 mb-1">Đề Thi Cấp Vũ Trụ 2026</div>
+                    <p class="text-[11px] text-gray-400">Đề chuẩn quốc gia & Vũ trụ với cấu trúc trắc nghiệm 4 đáp án, ma trận, tích phân siêu vi và hộp điểm.</p>
+                </div>
+                <div onclick="loadTemplate('simple')" class="p-3 bg-cosmic-bg/70 hover:bg-cosmic-purple/40 border border-slate-700 rounded-lg cursor-pointer transition">
+                    <div class="font-bold text-gray-200 mb-1">Đề Kiểm Tra Toán 15 Phút</div>
+                    <p class="text-[11px] text-gray-400">Mẫu ngắn gọn dành cho bài kiểm tra thường xuyên.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CENTER PANEL: EDITOR & PREVIEW (SPLIT VIEW) -->
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            
+            <!-- LEFT HALF: CODEMIRROR TEX EDITOR -->
+            <section class="w-full md:w-1/2 flex flex-col border-r border-cosmic-border bg-cosmic-bg/80 relative">
+                <!-- Editor Top HUD Bar -->
+                <div class="bg-cosmic-bg/90 border-b border-cosmic-border px-3 py-1.5 flex items-center justify-between text-xs">
+                    <span class="font-mono text-cyan-300 flex items-center gap-2">
+                        <i class="fa-solid fa-code text-cosmic-pink"></i> Document.tex
+                    </span>
+                    <div class="flex items-center space-x-2 text-[11px]">
+                        <button onclick="formatCode()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-gray-300 transition">
+                            <i class="fa-solid fa-wand-magic-sparkles text-cyan-400"></i> Căn chỉnh Code
+                        </button>
+                        <button onclick="clearEditor()" class="px-2 py-0.5 bg-red-900/40 hover:bg-red-800/60 border border-red-700/50 rounded text-red-300 transition">
+                            <i class="fa-solid fa-trash-can"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Mirror Container -->
+                <div class="flex-1 relative overflow-hidden">
+                    <textarea id="tex-editor"></textarea>
+                </div>
+
+                <!-- Bottom Status / Console Panel -->
+                <div class="h-28 bg-slate-950 border-t border-cosmic-border p-2 flex flex-col font-mono text-[11px] text-gray-300">
+                    <div class="flex items-center justify-between text-slate-400 pb-1 mb-1 border-b border-slate-800">
+                        <span class="text-cyan-400 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-terminal text-xs"></i> TeXLive Console Output
+                        </span>
+                        <span id="compiler-status" class="text-emerald-400">● Ready (LuaLaTeX / TeXLive 5.0)</span>
+                    </div>
+                    <div id="console-logs" class="flex-1 overflow-y-auto space-y-0.5 text-slate-400 select-text">
+                        <div>[INFO] Initialized TeXLive 5.0 Engine with KaTeX Renderer...</div>
+                        <div>[SUCCESS] Package 'cosmic-exam' loaded successfully.</div>
+                        <div>[READY] Press Ctrl+Enter to trigger fast compilation.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT HALF: LIVE RENDER / PDF PREVIEW -->
+            <section class="w-full md:w-1/2 flex flex-col bg-slate-900/90 relative">
+                <!-- Preview Top HUD Bar -->
+                <div class="bg-cosmic-bg/90 border-b border-cosmic-border px-3 py-1.5 flex items-center justify-between text-xs">
+                    <span class="font-mono text-cyan-300 flex items-center gap-2">
+                        <i class="fa-solid fa-file-pdf text-red-400"></i> Xem trước Đề Thi (Live View)
+                    </span>
+                    <div class="flex items-center space-x-2 text-[11px]">
+                        <span class="text-gray-400">Tỷ lệ: 100%</span>
+                        <button onclick="printPreview()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-gray-300 transition">
+                            <i class="fa-solid fa-print"></i> In / Xuất PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Document Paper Renderer Pane -->
+                <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-950 flex justify-center">
+                    <!-- Virtual A4 Page Layout -->
+                    <div id="rendered-paper" class="exam-paper w-full max-w-2xl p-6 sm:p-10 rounded-sm shadow-2xl relative select-text">
+                        <!-- Dynamic rendered LaTeX content goes here -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & ENGINE -->
+    <script>
+        // Sample Cosmic Level Exam TeX Code Template
+        const cosmicExamTemplate = `\\documentclass[12pt,a4paper]{article}
+\\usepackage{amsmath,amssymb,cosmic}
+
+\\begin{document}
+
+% GIAO DIỆN ĐỀ THI ĐỀ TÀI CẤP VŨ TRỤ
+\\centerline{\\bfseries\\Large BỘ GIÁO DỤC VÀ CÔNG NGHỆ VŨ TRỤ}
+\\centerline{\\bfseries\\large HỘI ĐỒNG THI THIÊN HÀ LIÊN BANG 2026}
+\\vspace{0.3cm}
+\\centerline{\\Large\\bfseries ĐỀ THI ĐỀ TÀI CẤP VŨ TRỤ - MÔN: TOÁN HỌC}
+\\centerline{\\textit{Thời gian làm bài: 180 phút (Không kể thời gian phát đề)}}
+\\vspace{0.4cm}
+\\hrule
+\\vspace{0.4cm}
+
+\\noindent \\textbf{Họ và tên thí sinh:} \\dotfill \\\\
+\\noindent \\textbf{Mã số Thần Mã / Tàu Vũ Trụ:} \\dotfill \\quad \\textbf{Mã đề thi:} \\textbf{999-COSMIC}
+
+\\vspace{0.5cm}
+
+% HỘP GHI CHÚ
+\\begin{tcolorbox}[title=QUY ĐỊNH CẤP VŨ TRỤ]
+Thí sinh được sử dụng máy tính lượng tử cầm tay. Mọi hành vi bẻ cong không-thời gian để gian lận sẽ bị hủy kết quả ngay lập tức.
+\\end{tcolorbox}
+
+\\vspace{0.4cm}
+
+% CÂU HỎI MẪU
+\\noindent \\textbf{Câu 1 (Cấp độ Thiên Hà):} Tính tích phân phân kỳ của trường hấp dẫn quanh lỗ đen có bán kính Schwarzschild $R_s$:
+\\[ I = \\int_{0}^{\\infty} \\frac{x^3}{e^x - 1} dx + \\lim_{t \\to \\infty} \\sum_{n=1}^{t} \\frac{\\alpha^n}{\\beta^{2n}} \\]
+\\begin{enumerate}
+    \\item[A.] $I = \\frac{\\pi^4}{15} + \\sqrt{\\alpha \\cdot \\beta}$
+    \\item[B.] $I = \\frac{\\pi^2}{6}$
+    \\item[C.] $I = \\infty$
+    \\item[D.] $I = 0$
+\\end{enumerate}
+
+\\vspace{0.3cm}
+
+\\noindent \\textbf{Câu 2 (Định lý Ma trận Siêu không gian):} Cho ma trận trạng thái siêu dẫn $A$ thỏa mãn phương trình đặc trưng:
+\\[ A = \\begin{pmatrix} 1 & \\alpha & 0 \\\\ 0 & 2 & \\beta \\\\ 0 & 0 & 3 \\end{pmatrix} \\]
+Tính định thức $\\det(A^2 + 2A + I)$.
+\\begin{enumerate}
+    \\item[A.] 576
+    \\item[B.] 144
+    \\item[C.] 256
+    \\item[D.] 1024
+\\end{enumerate}
+
+\\vspace{0.4cm}
+
+\\begin{tcolorbox}[title=LỜI GIẢI TẮT CÂU 1]
+Áp dụng công thức hàm Zeta Riemann $\\zeta(4) = \\frac{\\pi^4}{90}$, ta tính được giá trị chuẩn xác của tích phân Planck là $\\frac{\\pi^4}{15}$.
+\\end{tcolorbox}
+
+\\vspace{0.5cm}
+\\centerline{\\textbf{--- HẾT ---}}
+\\end{document}`;
+
+        const simpleExamTemplate = `\\documentclass{article}
+\\begin{document}
+
+\\centerline{\\Large\\bfseries BÀI KIỂM TRA TOÁN 15 PHÚT}
+\\vspace{0.3cm}
+
+\\noindent \\textbf{Câu 1:} Giải phương trình bậc hai: $x^2 - 5x + 6 = 0$.
+\\begin{enumerate}
+    \\item[A.] $x = 2, x = 3$
+    \\item[B.] $x = -2, x = -3$
+    \\item[C.] $x = 1, x = 6$
+    \\item[D.] Vô nghiệm
+\\end{enumerate}
+
+\\end{document}`;
+
+        let editor;
+
+        // Initialize App on DOM Load
+        window.addEventListener('DOMContentLoaded', () => {
+            initStarsCanvas();
+            initCodeMirror();
+            setupTabListeners();
+            setupCompileEvents();
+            
+            // Initial compilation
+            setTimeout(compileTex, 300);
+        });
+
+        // Initialize CodeMirror Editor
+        function initCodeMirror() {
+            editor = CodeMirror.fromTextArea(document.getElementById('tex-editor'), {
+                mode: 'stex',
+                theme: 'dracula',
+                lineNumbers: true,
+                lineWrapping: true,
+                autoCloseBrackets: true,
+                viewportMargin: Infinity
+            });
+
+            editor.setValue(cosmicExamTemplate);
+
+            // Auto compile on change with debounce
+            let timer;
+            editor.on('change', () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    compileTex();
+                }, 500);
+            });
+        }
+
+        // Fast LaTeX Parser & Renderer Engine using KaTeX and DOM simulation
+        function compileTex() {
+            const startTime = performance.now();
+            const rawTex = editor.getValue();
+            const paper = document.getElementById('rendered-paper');
+            const consoleLogs = document.getElementById('console-logs');
+
+            try {
+                // Translate custom TeX commands into HTML + KaTeX
+                let html = translateTexToHtml(rawTex);
+                paper.innerHTML = html;
+
+                // Render KaTeX inline math ($...$) and block math ($$...$$ or \[...\])
+                renderMathInElement(paper);
+
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+                document.getElementById('compile-time').innerText = duration + ' ms';
+                
+                // Log success
+                const logItem = document.createElement('div');
+                logItem.className = 'text-emerald-400';
+                logItem.innerText = `[SUCCESS ${new Date().toLocaleTimeString()}] Compiled successfully in ${duration}ms. 0 Errors.`;
+                consoleLogs.appendChild(logItem);
+                consoleLogs.scrollTop = consoleLogs.scrollHeight;
+                
+                document.getElementById('compiler-status').innerText = '● Compiled Successfully';
+                document.getElementById('compiler-status').className = 'text-emerald-400';
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('compiler-status').innerText = '● Compile Warning';
+                document.getElementById('compiler-status').className = 'text-amber-400';
+            }
+        }
+
+        // Custom TeX to HTML Converter Logic
+        function translateTexToHtml(tex) {
+            // Remove comments
+            let clean = tex.replace(/%.*/g, '');
+
+            // Document body extraction if present
+            if (clean.includes('\\begin{document}')) {
+                clean = clean.split('\\begin{document}')[1].split('\\end{document}')[0] || clean;
+            }
+
+            // Headings & Centerlines
+            clean = clean.replace(/\\centerline\{\\bfseries\\Large (.*?)\}/g, '<h1 class="text-center font-bold text-xl uppercase tracking-wide my-1 text-slate-900">$1</h1>');
+            clean = clean.replace(/\\centerline\{\\bfseries\\large (.*?)\}/g, '<h2 class="text-center font-bold text-base my-1 text-slate-800">$1</h2>');
+            clean = clean.replace(/\\centerline\{\\Large\\bfseries (.*?)\}/g, '<h2 class="text-center font-bold text-lg text-blue-900 my-2">$1</h2>');
+            clean = clean.replace(/\\centerline\{\\textit\{(.*?)\}\}/g, '<p class="text-center italic text-xs text-slate-600 mb-2">$1</p>');
+            clean = clean.replace(/\\centerline\{\\textbf\{(.*?)\}\}/g, '<p class="text-center font-bold text-sm my-2 text-slate-800">$1</p>');
+
+            // Structure elements
+            clean = clean.replace(/\\hrule/g, '<hr class="border-t-2 border-slate-900 my-3"/>');
+            clean = clean.replace(/\\vspace\{.*?\} font/g, '');
+            clean = clean.replace(/\\noindent/g, '');
+            clean = clean.replace(/\\quad/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+            clean = clean.replace(/\\dotfill/g, '<span class="inline-block flex-1 border-b border-dotted border-slate-500 mx-1 min-w-[120px]"></span>');
+            clean = clean.replace(/\\\\/g, '<br/>');
+
+            // Custom Cosmic Box (tcolorbox)
+            clean = clean.replace(/\\begin\{tcolorbox\}\[title=(.*?)\]([\s\S]*?)\\end\{tcolorbox\}/g, 
+                '<div class="my-4 border-2 border-indigo-900 rounded-md overflow-hidden shadow-sm">' +
+                '<div class="bg-indigo-900 text-white text-xs font-bold px-3 py-1.5 uppercase font-sans">$1</div>' +
+                '<div class="p-3 bg-indigo-50/50 text-slate-900 text-sm italic">$2</div>' +
+                '</div>');
+
+            // Multiple Choice Options (enumerate with A., B., C., D.)
+            clean = clean.replace(/\\begin\{enumerate\}([\s\S]*?)\\end\{enumerate\}/g, function(match, inner) {
+                let items = inner.replace(/\\item\[(.*?)\]/g, '<div class="w-1/2 sm:w-1/4 p-1 flex items-baseline font-serif"><span class="font-bold mr-1.5 text-blue-900">$1</span><span>').replace(/\n/g, '</span></div>');
+                return '<div class="flex flex-wrap my-2 text-sm pl-2 bg-slate-50/80 p-2 rounded border border-slate-200">' + items + '</div>';
+            });
+
+            // Bold formatting
+            clean = clean.replace(/\\textbf\{(.*?)\}/g, '<strong class="font-bold text-slate-900">$1</strong>');
+            clean = clean.replace(/\\textit\{(.*?)\}/g, '<em class="italic text-slate-800">$1</em>');
+
+            // Paragraph returns
+            clean = clean.replace(/\n\s*\n/g, '<div class="h-3"></div>');
+
+            return clean;
+        }
+
+        // Render KaTeX math elements inside container
+        function renderMathInElement(element) {
+            // Render Block Display Math \[ ... \] or $$ ... $$
+            element.innerHTML = element.innerHTML.replace(/\\\[([\s\S]*?)\\\]/g, (m, math) => {
+                try {
+                    return `<div class="my-3 text-center">${katex.renderToString(math.trim(), { displayMode: true, throwOnError: false })}</div>`;
+                } catch(e) { return math; }
+            });
+
+            // Render Inline Math $ ... $
+            element.innerHTML = element.innerHTML.replace(/\$([^\$]+)\$/g, (m, math) => {
+                try {
+                    return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+                } catch(e) { return math; }
+            });
+        }
+
+        // Quick Symbol Insertion
+        function insertTex(symbol) {
+            const doc = editor.getDoc();
+            const cursor = doc.getCursor();
+            doc.replaceRange(symbol + ' ', cursor);
+            editor.focus();
+        }
+
+        // Insert Code Snippets
+        function insertSnippet(type) {
+            let snippet = '';
+            if (type === 'question') {
+                snippet = `\n\\noindent \\textbf{Câu 3:} Nội dung câu hỏi toán học ở đây $f(x) = x^2$:\n\\begin{enumerate}\n    \\item[A.] Đáp án A\n    \\item[B.] Đáp án B\n    \\item[C.] Đáp án C\n    \\item[D.] Đáp án D\n\\end{enumerate}\n`;
+            } else if (type === 'matrix') {
+                snippet = `\n\\[ A = \\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} \\]\n`;
+            } else if (type === 'box') {
+                snippet = `\n\\begin{tcolorbox}[title=GHI CHÚ QUAN TRỌNG]\nNội dung ghi chú hoặc công thức trọng tâm ở đây.\n\\end{tcolorbox}\n`;
+            } else if (type === 'solution') {
+                snippet = `\n\\begin{tcolorbox}[title=HƯỚNG DẪN GIẢI]\nTa có: $f'(x) = 2x = 0 \\Leftrightarrow x = 0$.\n\\end{tcolorbox}\n`;
+            }
+            insertTex(snippet);
+        }
+
+        // Load Preset Templates
+        function loadTemplate(name) {
+            if (name === 'cosmic') {
+                editor.setValue(cosmicExamTemplate);
+            } else if (name === 'simple') {
+                editor.setValue(simpleExamTemplate);
+            }
+            compileTex();
+        }
+
+        // Export Rendered Document to MS Word (.docx formatted HTML Blob)
+        function exportToWord() {
+            const content = document.getElementById('rendered-paper').innerHTML;
+            
+            const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+                xmlns:w='urn:schemas-microsoft-com:office:word' 
+                xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Exported Exam</title>
+                <style>
+                    body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.3; }
+                    h1 { font-size: 16pt; font-weight: bold; text-align: center; }
+                    h2 { font-size: 14pt; font-weight: bold; text-align: center; }
+                    .tcolorbox { border: 2px solid #1e1b4b; margin: 10px 0; padding: 10px; background-color: #f5f3ff; }
+                </style>
+                </head><body>`;
+            const footer = "</body></html>";
+            
+            const sourceHTML = header + content + footer;
+
+            const blob = new Blob(['\ufeff' + sourceHTML], {
+                type: 'application/msword'
+            });
+            
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'De_Thi_Cap_Vu_Tru_2026.doc';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Log output
+            const consoleLogs = document.getElementById('console-logs');
+            const logItem = document.createElement('div');
+            logItem.className = 'text-blue-400 font-bold';
+            logItem.innerText = `[EXPORT] Document successfully exported to Word (.doc)!`;
+            consoleLogs.appendChild(logItem);
+        }
+
+        // Format Code Utility
+        function formatCode() {
+            const totalLines = editor.lineCount();
+            editor.autoFormatRange({line:0, ch:0}, {line:totalLines, ch:0});
+        }
+
+        function clearEditor() {
+            editor.setValue('');
+            editor.focus();
+        }
+
+        function printPreview() {
+            window.print();
+        }
+
+        // Tab Switching Logic
+        function setupTabListeners() {
+            const tabSymBtn = document.getElementById('tab-symbols-btn');
+            const tabTplBtn = document.getElementById('tab-templates-btn');
+            const tabSymContent = document.getElementById('tab-symbols-content');
+            const tabTplContent = document.getElementById('tab-templates-content');
+
+            tabSymBtn.addEventListener('click', () => {
+                tabSymBtn.className = "flex-1 py-2.5 text-center font-bold text-cyan-400 border-b-2 border-cyan-400 bg-cosmic-purple/20";
+                tabTplBtn.className = "flex-1 py-2.5 text-center font-bold text-gray-400 hover:text-cyan-300 transition";
+                tabSymContent.classList.remove('hidden');
+                tabTplContent.classList.add('hidden');
+            });
+
+            tabTplBtn.addEventListener('click', () => {
+                tabTplBtn.className = "flex-1 py-2.5 text-center font-bold text-cyan-400 border-b-2 border-cyan-400 bg-cosmic-purple/20";
+                tabSymBtn.className = "flex-1 py-2.5 text-center font-bold text-gray-400 hover:text-cyan-300 transition";
+                tabTplContent.classList.remove('hidden');
+                tabSymContent.classList.add('hidden');
+            });
+        }
+
+        // Setup Events
+        function setupCompileEvents() {
+            document.getElementById('btn-fast-compile').addEventListener('click', compileTex);
+            document.getElementById('btn-compile-menu').addEventListener('click', compileTex);
+            document.getElementById('btn-export-word').addEventListener('click', exportToWord);
+            document.getElementById('btn-export-word-menu').addEventListener('click', exportToWord);
+
+            // Shortcut Ctrl+Enter or F5 to compile
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey && e.key === 'Enter') || e.key === 'F5') {
+                    e.preventDefault();
+                    compileTex();
+                }
+            });
+        }
+
+        // Animated Cosmic Background Canvas
+        function initStarsCanvas() {
+            const canvas = document.getElementById('stars-canvas');
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            const stars = Array.from({ length: 120 }, () => ({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 1.5 + 0.5,
+                alpha: Math.random(),
+                speed: Math.random() * 0.02 + 0.005
+            }));
+
+            function animateStars() {
+                ctx.clearRect(0, 0, width, height);
+                stars.forEach(star => {
+                    star.alpha += star.speed;
+                    if (star.alpha > 1 || star.alpha < 0) star.speed = -star.speed;
+                    ctx.fillStyle = `rgba(0, 240, 255, ${Math.abs(star.alpha)})`;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                requestAnimationFrame(animateStars);
+            }
+            animateStars();
+        }
+    </script>
+</body>
+</html>
