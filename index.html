@@ -11,7 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-  <!-- MathJax hỗ trợ hiển thị công thức Toán học đẹp mắt -->
+  <!-- MathJax hỗ trợ hiển thị công thức Toán học -->
   <script>
     window.MathJax = {
       tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
@@ -129,7 +129,7 @@
       </div>
     </div>
 
-    <!-- MODAL CHATBOT TRỢ GIẢNG AI (NÂNG CẤP CHUYÊN SÂU) -->
+    <!-- MODAL CHATBOT TRỢ GIẢNG AI -->
     <div id="aiChatWidget" class="hidden bg-white rounded-2xl shadow-2xl w-80 sm:w-[420px] border border-blue-200 flex flex-col overflow-hidden h-[520px]">
       <div class="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-3.5 flex justify-between items-center shrink-0">
         <div class="flex items-center gap-2.5">
@@ -148,7 +148,6 @@
         </div>
       </div>
 
-      <!-- Gợi ý nhanh -->
       <div class="bg-blue-50/70 px-3 py-2 border-b border-blue-100 flex gap-1.5 overflow-x-auto shrink-0 text-[11px]">
         <button onclick="quickAIPrompt('Giải chi tiết phương trình: x^2 - 5x + 6 = 0')" class="bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full whitespace-nowrap hover:bg-blue-600 hover:text-white transition">Giải PT bậc 2</button>
         <button onclick="quickAIPrompt('Tóm tắt công thức hệ thức Vi-ét và ứng dụng')" class="bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full whitespace-nowrap hover:bg-blue-600 hover:text-white transition">Hệ thức Vi-ét</button>
@@ -159,7 +158,7 @@
         <div class="flex items-start gap-2">
           <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-robot text-xs"></i></div>
           <div class="bg-white text-gray-800 p-3 rounded-2xl rounded-tl-none border border-gray-200 shadow-sm max-w-[85%] leading-relaxed">
-            Chào bạn! Mình là <b>Trợ Giảng AI Toán 9</b>. Bạn có thể dán đề bài vào đây (hoặc bấm nút <b>"Hỏi Trợ Giảng AI"</b> ngay trong đề thi) để mình hướng dẫn giải chi tiết từng bước nhé!
+            Chào bạn! Mình là <b>Trợ Giảng AI Toán 9</b>. Bạn có thể dán đề bài vào đây để mình hướng dẫn giải chi tiết từng bước nhé!
           </div>
         </div>
       </div>
@@ -235,7 +234,6 @@
       }
     ];
 
-    // Dữ liệu mẫu đề thi chuẩn Azota để test ngay nếu Firebase chưa có đề
     const sampleAzotaExams = [
       {
         id: 'demo_azota_1',
@@ -298,16 +296,14 @@
 
     let myAppState = {
       currentUser: { username: 'Admin', role: 'admin' },
-      view: 'home', // home, exam_list, taking_exam, exam_result, question_bank, statistics, admin_panel
+      view: 'home',
       selectedSubject: 'Toán 9',
       roadmaps: fallbackRoadmaps,
       lectures: [],
-      chapterDocs: [], // MỚI: Lưu trữ Đề thi & Đáp án riêng cho từng chương
       exams: [...sampleAzotaExams],
       questions: [],
       students: [],
       submissions: [],
-      // State cho phòng thi Azota
       activeExam: null,
       examQuestionsData: null,
       userAnswers: { mcq: {}, tf: {}, sa: {} },
@@ -318,8 +314,8 @@
       timerRef: null,
       tetTimerInterval: null,
       openRoadmaps: { 'rm_1': true },
-      openChapters: { 'rm_1_0': true },
-      selectedChapterForModal: ''
+      openChapters: { 'rm_1_0': true, 'rm_1_1': true },
+      editingLectureId: null // Lưu ID bài giảng đang cần cập nhật/bổ sung file Đề hoặc Đáp án
     };
 
     function bootApp() {
@@ -331,12 +327,6 @@
       db.ref('lectures').on('value', snap => {
         const d = snap.val();
         myAppState.lectures = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
-        renderUI();
-      });
-      // Lắng nghe dữ liệu Đề & Đáp án từng chương
-      db.ref('chapter_docs').on('value', snap => {
-        const d = snap.val();
-        myAppState.chapterDocs = d ? Object.keys(d).map(k => ({ id: k, ...d[k] })) : [];
         renderUI();
       });
       db.ref('exams').on('value', snap => {
@@ -546,12 +536,6 @@
       }
     }
 
-    function deleteChapterDoc(id) {
-      if (confirm('Xóa bộ Đề & Đáp án này?')) {
-        db.ref('chapter_docs/' + id).remove();
-      }
-    }
-
     function deleteExam(id) {
       if (id.startsWith('demo_')) {
         alert('Đây là đề mẫu hệ thống, không thể xóa!');
@@ -587,12 +571,13 @@
       renderUI();
     }
 
-    // MỞ MODAL UPLOAD ĐỀ & ĐÁP ÁN CHO CHƯƠNG CỤ THỂ
-    function openUploadChapterDoc(chapName) {
-      myAppState.selectedChapterForModal = chapName;
-      openModal('modalChapterDoc');
-      const sel = document.getElementById('docChapterSelect');
-      if (sel) sel.value = chapName;
+    // MỞ MODAL ĐỂ BỔ SUNG / CẬP NHẬT FILE ĐỀ HOẶC FILE ĐÁP ÁN CHO CHỦ ĐỀ CÓ SẴN
+    function openEditLectureFiles(lecId) {
+      const lec = myAppState.lectures.find(l => l.id === lecId);
+      if (!lec) return;
+      myAppState.editingLectureId = lecId;
+      document.getElementById('editLecTitleLabel').innerText = lec.title;
+      openModal('modalUpdateLecFiles');
     }
 
     // ==========================================
@@ -602,7 +587,6 @@
       const exam = myAppState.exams.find(e => e.id === examId);
       if (!exam) return;
 
-      // Sao chép & trộn câu hỏi nếu bật chế độ trộn đề Azota
       let mcqList = JSON.parse(JSON.stringify(exam.mcq || []));
       if (exam.shuffleQuestions) {
         mcqList.sort(() => Math.random() - 0.5);
@@ -655,7 +639,6 @@
 
     function inputSaAnswer(qIdx, val) {
       myAppState.userAnswers.sa[qIdx] = val;
-      // Cập nhật màu nút trên bảng điều hướng không cần re-render toàn trang làm mất focus input
       const navBtn = document.getElementById(`nav_sa_${qIdx}`);
       if (navBtn) {
         if (val.trim() !== '') {
@@ -688,13 +671,11 @@
       let totalItems = 0;
       let correctItems = 0;
 
-      // Chấm trắc nghiệm 4 lựa chọn
       (qData.mcq || []).forEach((q, idx) => {
         totalItems++;
         if (ans.mcq[idx] === q.correct) correctItems++;
       });
 
-      // Chấm Đúng/Sai (mỗi ý nhỏ tính 0.25 phần hoặc 1 đơn vị điểm)
       (qData.tf || []).forEach((q, qIdx) => {
         (q.items || []).forEach((item, iIdx) => {
           totalItems++;
@@ -702,7 +683,6 @@
         });
       });
 
-      // Chấm trả lời ngắn
       (qData.sa || []).forEach((q, idx) => {
         totalItems++;
         const userVal = (ans.sa[idx] || '').trim().replace(',', '.').toLowerCase();
@@ -725,7 +705,6 @@
         submittedAt: new Date().toLocaleString('vi-VN')
       };
 
-      // Lưu lịch sử thi lên Firebase
       db.ref('submissions').push(submissionRecord);
 
       myAppState.resultObj = submissionRecord;
@@ -733,7 +712,6 @@
       renderUI();
     }
 
-    // Nhờ Trợ giảng AI giải thích câu hỏi cụ thể trong đề thi
     function askAIExplainQuestion(questionText, optionsText = '') {
       const chatWidget = document.getElementById('aiChatWidget');
       if (chatWidget.classList.contains('hidden')) chatWidget.classList.remove('hidden');
@@ -794,7 +772,7 @@
       }
 
       let navButtons = `
-        <button onclick="navTo('home')" class="px-3 py-1.5 rounded-lg transition ${myAppState.view === 'home' ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}"><i class="fa-solid fa-folder-open mr-1"></i> Thư mục & Đề chương</button>
+        <button onclick="navTo('home')" class="px-3 py-1.5 rounded-lg transition ${myAppState.view === 'home' ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}"><i class="fa-solid fa-folder-open mr-1"></i> Thư mục & Tài liệu</button>
         <button onclick="navTo('exam_list')" class="px-3 py-1.5 rounded-lg transition ${['exam_list','taking_exam','exam_result'].includes(myAppState.view) ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}"><i class="fa-solid fa-laptop-file mr-1"></i> Kiểm tra Azota</button>
         <button onclick="navTo('question_bank')" class="px-3 py-1.5 rounded-lg transition ${myAppState.view === 'question_bank' ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}"><i class="fa-solid fa-database mr-1"></i> Ngân hàng câu hỏi</button>
       `;
@@ -808,7 +786,7 @@
       let mainArea = '';
 
       // ------------------------------------------
-      // VIEW 1: TRANG CHỦ - THƯ MỤC & TẢI ĐỀ/ĐÁP ÁN TỪNG CHƯƠNG
+      // VIEW 1: TRANG CHỦ - MỖI CHỦ ĐỀ CÓ MỤC TẢI FILE ĐỀ & FILE ĐÁP ÁN
       // ------------------------------------------
       if (myAppState.view === 'home') {
         const subjects = ['Toán 9', 'Toán 8', 'Toán 7', 'Đại số 10', 'Hình học 11', 'Ôn thi vào 10'];
@@ -835,10 +813,9 @@
             </div>
             <div class="flex flex-wrap gap-2">
               ${myAppState.currentUser.role === 'admin' ? `
-                <button onclick="openModal('modalRoadmap')" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 shadow-sm">+ Lộ Trình</button>
-                <button onclick="openModal('modalChapter')" class="bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-amber-700 shadow-sm">+ Chương</button>
-                <button onclick="openModal('modalChapterDoc')" class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 shadow-sm"><i class="fa-solid fa-file-circle-plus mr-1"></i> Đăng Đề & Đáp Án</button>
-                <button onclick="openModal('modalLec')" class="bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-green-700 shadow-sm">+ Bài Giảng</button>
+                <button onclick="openModal('modalRoadmap')" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 shadow-sm">+ Thêm Lộ Trình</button>
+                <button onclick="openModal('modalChapter')" class="bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-amber-700 shadow-sm">+ Thêm Chương</button>
+                <button onclick="openModal('modalLec')" class="bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-green-700 shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Đăng Chủ Đề (Đề & Đáp Án)</button>
               ` : ''}
             </div>
           </div>
@@ -873,7 +850,6 @@
                             const chapKey = rm.id + '_' + cIdx;
                             const isChapOpen = myAppState.openChapters[chapKey];
                             const chapLectures = myAppState.lectures.filter(l => l.chapter === chapName);
-                            const chapDocs = myAppState.chapterDocs.filter(d => d.chapter === chapName);
                             const chapAzotaExams = myAppState.exams.filter(ex => ex.chapter === chapName);
 
                             return `
@@ -883,8 +859,12 @@
                                     <i class="fa-solid fa-bookmark mr-2 text-rose-600"></i>${chapName}
                                   </button>
                                   <div class="flex items-center gap-2">
-                                    <span class="text-[11px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-semibold">${chapDocs.length} đề & đáp án</span>
-                                    <span class="text-[11px] bg-rose-200/80 text-rose-800 px-2 py-0.5 rounded-full font-semibold">${chapLectures.length} bài học</span>
+                                    ${chapAzotaExams.length > 0 ? `
+                                      <button onclick="startAzotaExam('${chapAzotaExams[0].id}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition flex items-center gap-1">
+                                        <i class="fa-solid fa-play"></i> Thi Online (${chapAzotaExams[0].duration}p)
+                                      </button>
+                                    ` : ''}
+                                    <span class="text-xs bg-rose-200/80 text-rose-800 px-2.5 py-0.5 rounded-full font-semibold">(${chapLectures.length} chủ đề)</span>
                                     ${myAppState.currentUser.role === 'admin' ? `
                                       <button onclick="deleteChapter('${rm.id}', ${cIdx})" class="text-red-500 hover:text-red-700 text-xs ml-1" title="Xóa chương này">
                                         <i class="fa-solid fa-trash-can"></i>
@@ -897,99 +877,62 @@
                                 </div>
 
                                 ${isChapOpen ? `
-                                  <div class="bg-white border-t border-rose-100 p-3 sm:p-4 space-y-4">
-                                    
-                                    <!-- KHU VỰC TẢI ĐỀ THI & ĐÁP ÁN CỦA CHƯƠNG (MỚI) -->
-                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3.5 border border-blue-200">
-                                      <div class="flex flex-wrap justify-between items-center gap-2 mb-2.5">
-                                        <div class="flex items-center gap-2 font-bold text-blue-900 text-xs sm:text-sm">
-                                          <i class="fa-solid fa-file-pdf text-red-600 text-base"></i>
-                                          <span>KHO ĐỀ ÔN TẬP & ĐÁP ÁN CHI TIẾT CỦA CHƯƠNG</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                          ${chapAzotaExams.length > 0 ? `
-                                            <button onclick="startAzotaExam('${chapAzotaExams[0].id}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1">
-                                              <i class="fa-solid fa-play"></i> Thi Online Azota (${chapAzotaExams[0].duration}p)
-                                            </button>
-                                          ` : ''}
-                                          ${myAppState.currentUser.role === 'admin' ? `
-                                            <button onclick="openUploadChapterDoc('${chapName.replace(/'/g, "\\'")}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm transition">
-                                              + Tải lên Đề & Đáp án
-                                            </button>
-                                          ` : ''}
-                                        </div>
-                                      </div>
-
-                                      ${chapDocs.length === 0 ? `
-                                        <div class="text-xs text-gray-500 italic bg-white/70 p-2.5 rounded-lg border border-dashed border-blue-200 flex justify-between items-center">
-                                          <span>Chưa có file Đề thi & Đáp án riêng cho chương này.</span>
-                                          <span class="text-[11px] text-blue-600 font-medium">Admin có thể bấm "+ Tải lên Đề & Đáp án"</span>
-                                        </div>
-                                      ` : `
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                                          ${chapDocs.map(doc => `
-                                            <div class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm flex flex-col justify-between gap-2 hover:border-blue-300 transition">
-                                              <div class="flex justify-between items-start gap-2">
-                                                <div>
-                                                  <div class="font-bold text-gray-800 text-xs sm:text-sm flex items-center gap-1.5">
-                                                    <i class="fa-solid fa-file-lines text-blue-600"></i> ${doc.title}
-                                                  </div>
-                                                  <div class="text-[10px] text-gray-400 mt-0.5">Cập nhật: ${doc.date || 'Hôm nay'}</div>
-                                                </div>
-                                                ${myAppState.currentUser.role === 'admin' ? `
-                                                  <button onclick="deleteChapterDoc('${doc.id}')" class="text-red-400 hover:text-red-600 text-xs" title="Xóa bộ đề"><i class="fa-solid fa-trash-can"></i></button>
-                                                ` : ''}
-                                              </div>
-                                              <div class="flex items-center gap-2 pt-1 border-t border-gray-100">
-                                                ${doc.examFileUrl ? `
-                                                  <a href="${doc.examFileUrl}" download="${doc.examFileName || 'De_On_Tap'}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2.5 rounded-lg text-xs font-bold text-center flex items-center justify-center gap-1.5 transition">
-                                                    <i class="fa-solid fa-download"></i> Tải Đề Thi
-                                                  </a>
-                                                ` : `<span class="flex-1 bg-gray-100 text-gray-400 py-1.5 px-2 rounded-lg text-xs text-center">Chưa có file đề</span>`}
-                                                
-                                                ${doc.answerFileUrl ? `
-                                                  <a href="${doc.answerFileUrl}" download="${doc.answerFileName || 'Dap_An_Chi_Tiet'}" target="_blank" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 px-2.5 rounded-lg text-xs font-bold text-center flex items-center justify-center gap-1.5 transition">
-                                                    <i class="fa-solid fa-check-double"></i> Tải Đáp Án
-                                                  </a>
-                                                ` : `<span class="flex-1 bg-gray-100 text-gray-400 py-1.5 px-2 rounded-lg text-xs text-center">Chưa có đáp án</span>`}
-                                              </div>
+                                  <div class="bg-white border-t border-rose-100 divide-y divide-gray-100">
+                                    ${chapLectures.length === 0 ? `<div class="p-4 text-center text-xs text-gray-500 italic">Chưa có chủ đề / bài giảng nào trong chương này.</div>` : 
+                                      chapLectures.map(l => `
+                                        <div class="p-3.5 sm:px-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:bg-blue-50/30 transition">
+                                          <div class="space-y-1">
+                                            <div class="flex items-center gap-2">
+                                              <i class="fa-solid fa-circle-play text-blue-600 text-base"></i>
+                                              <h4 class="font-bold text-gray-900 text-sm">${l.title}</h4>
                                             </div>
-                                          `).join('')}
+                                            <p class="text-xs text-gray-500">GV: ${l.instructor || 'Hai Ton'} | ${l.date || ''}</p>
+                                          </div>
+
+                                          <!-- CÁC NÚT TẢI FILE ĐỀ, FILE ĐÁP ÁN VÀ VIDEO NGAY TRÊN TỪNG CHỦ ĐỀ -->
+                                          <div class="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto justify-end">
+                                            
+                                            <!-- 1. NÚT TẢI FILE ĐỀ -->
+                                            ${l.fileUrl ? `
+                                              <a href="${l.fileUrl}" download="${l.fileName || 'De_Bai_' + l.title}" class="bg-blue-600 text-white hover:bg-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Tải File Đề">
+                                                <i class="fa-solid fa-file-arrow-down"></i> <span>Tải Đề</span>
+                                              </a>
+                                            ` : `
+                                              <span class="bg-gray-100 text-gray-400 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 cursor-not-allowed">
+                                                <i class="fa-solid fa-file"></i> Chưa có đề
+                                              </span>
+                                            `}
+
+                                            <!-- 2. NÚT TẢI FILE ĐÁP ÁN -->
+                                            ${l.solutionUrl ? `
+                                              <a href="${l.solutionUrl}" download="${l.solutionName || 'Dap_An_' + l.title}" class="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Tải File Đáp Án">
+                                                <i class="fa-solid fa-file-circle-check"></i> <span>Tải Đáp Án</span>
+                                              </a>
+                                            ` : `
+                                              <span class="bg-gray-100 text-gray-400 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 cursor-not-allowed">
+                                                <i class="fa-solid fa-check"></i> Chưa có đáp án
+                                              </span>
+                                            `}
+
+                                            <!-- 3. NÚT XEM VIDEO -->
+                                            ${l.videoUrl ? `
+                                              <a href="${l.videoUrl}" target="_blank" class="bg-red-50 text-red-700 border border-red-200 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition" title="Xem video">
+                                                <i class="fa-solid fa-video"></i> <span>Video</span>
+                                              </a>
+                                            ` : ''}
+
+                                            <!-- NÚT CHO ADMIN BỔ SUNG / SỬA FILE ĐỀ & ĐÁP ÁN CỦA CHỦ ĐỀ NÀY -->
+                                            ${myAppState.currentUser.role === 'admin' ? `
+                                              <button onclick="openEditLectureFiles('${l.id}')" class="bg-amber-100 hover:bg-amber-500 text-amber-800 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Đăng thêm / Cập nhật File Đề & Đáp Án cho chủ đề này">
+                                                <i class="fa-solid fa-upload mr-1"></i> Cập nhật Đề/Đáp án
+                                              </button>
+                                              <button onclick="deleteLecture('${l.id}')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white p-1.5 rounded-lg text-xs font-bold transition" title="Xóa chủ đề">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                              </button>
+                                            ` : ''}
+                                          </div>
                                         </div>
-                                      `}
-                                    </div>
-
-                                    <!-- DANH SÁCH BÀI GIẢNG TRONG CHƯƠNG -->
-                                    <div>
-                                      <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-book-open text-rose-600"></i> Bài Giảng & Video Lý Thuyết
-                                      </div>
-                                      <div class="divide-y divide-gray-100 border rounded-xl overflow-hidden">
-                                        ${chapLectures.length === 0 ? `<div class="p-3 text-center text-xs text-gray-500 italic bg-gray-50/50">Chưa có bài giảng nào trong chuyên đề này.</div>` : 
-                                          chapLectures.map(l => `
-                                            <div class="p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-gray-50 transition bg-white">
-                                              <div class="space-y-1">
-                                                <div class="flex items-center gap-2">
-                                                  <i class="fa-solid fa-circle-play text-blue-600 text-sm"></i>
-                                                  <h4 class="font-bold text-gray-900 text-sm">${l.title}</h4>
-                                                </div>
-                                                <p class="text-xs text-gray-500">GV: ${l.instructor || 'Hai Ton'} | ${l.date || ''}</p>
-                                              </div>
-
-                                              <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-                                                ${l.fileUrl ? `<a href="${l.fileUrl}" download="${l.fileName || 'TaiLieu'}" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition"><i class="fa-solid fa-file-arrow-down"></i> Tài liệu</a>` : ''}
-                                                ${l.videoUrl ? `<a href="${l.videoUrl}" target="_blank" class="bg-red-50 text-red-700 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition"><i class="fa-solid fa-video"></i> Video</a>` : ''}
-                                                ${myAppState.currentUser.role === 'admin' ? `
-                                                  <button onclick="deleteLecture('${l.id}')" class="bg-red-100 hover:bg-red-600 text-red-700 hover:text-white p-1.5 rounded-lg text-xs font-bold transition ml-1" title="Xóa bài giảng">
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                  </button>
-                                                ` : ''}
-                                              </div>
-                                            </div>
-                                          `).join('')}
-                                      </div>
-                                    </div>
-
+                                      `).join('')}
                                   </div>
                                 ` : ''}
                               </div>
@@ -1061,7 +1004,7 @@
       }
 
       // ------------------------------------------
-      // VIEW 3: PHÒNG LÀM BÀI THI AZOTA (CÓ BẢNG CÂU HỎI & TIMER)
+      // VIEW 3: PHÒNG LÀM BÀI THI AZOTA
       // ------------------------------------------
       else if (myAppState.view === 'taking_exam' && myAppState.activeExam) {
         const exam = myAppState.activeExam;
@@ -1076,8 +1019,6 @@
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
-            
-            <!-- CỘT TRÁI: NỘI DUNG ĐỀ THI -->
             <div class="lg:col-span-3 space-y-5 no-select">
               <div class="bg-white p-4 rounded-2xl shadow-sm border flex justify-between items-center">
                 <div>
@@ -1089,7 +1030,6 @@
                 </button>
               </div>
 
-              <!-- PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN -->
               ${qData.mcq.length > 0 ? `
                 <div class="bg-white p-5 rounded-2xl shadow-sm border space-y-5">
                   <div class="font-bold text-blue-800 border-b pb-2 text-sm uppercase">Phần I. Trắc nghiệm nhiều phương án lựa chọn</div>
@@ -1124,7 +1064,6 @@
                 </div>
               ` : ''}
 
-              <!-- PHẦN II: TRẮC NGHIỆM ĐÚNG / SAI -->
               ${qData.tf.length > 0 ? `
                 <div class="bg-white p-5 rounded-2xl shadow-sm border space-y-5">
                   <div class="font-bold text-blue-800 border-b pb-2 text-sm uppercase">Phần II. Câu trắc nghiệm đúng sai</div>
@@ -1153,7 +1092,6 @@
                 </div>
               ` : ''}
 
-              <!-- PHẦN III: TRẢ LỜI NGẮN -->
               ${qData.sa.length > 0 ? `
                 <div class="bg-white p-5 rounded-2xl shadow-sm border space-y-5">
                   <div class="font-bold text-blue-800 border-b pb-2 text-sm uppercase">Phần III. Câu trắc nghiệm trả lời ngắn</div>
@@ -1177,7 +1115,6 @@
               ` : ''}
             </div>
 
-            <!-- CỘT PHẢI: BẢNG ĐIỀU HƯỚNG AZOTA & ĐỒNG HỒ -->
             <div class="bg-white p-4 rounded-2xl shadow-md border border-blue-200 sticky top-20 space-y-4">
               <div class="text-center bg-slate-900 text-white p-3 rounded-xl">
                 <div class="text-[10px] uppercase tracking-wider text-gray-400">Thời gian còn lại</div>
@@ -1223,23 +1160,16 @@
                 </div>
               </div>
 
-              <div class="text-[11px] text-gray-500 space-y-1 pt-2 border-t">
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-blue-600 inline-block"></span> Đã làm</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-gray-100 border inline-block"></span> Chưa làm</div>
-                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Đang cắm cờ xem lại</div>
-              </div>
-
               <button onclick="submitAzotaExam(false)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
                 <i class="fa-solid fa-paper-plane"></i> NỘP BÀI THI
               </button>
             </div>
-
           </div>
         `;
       }
 
       // ------------------------------------------
-      // VIEW 4: KẾT QUẢ & LỜI GIẢI CHI TIẾT SAU KHI NỘP BÀI AZOTA
+      // VIEW 4: KẾT QUẢ AZOTA
       // ------------------------------------------
       else if (myAppState.view === 'exam_result' && myAppState.resultObj) {
         const res = myAppState.resultObj;
@@ -1248,7 +1178,6 @@
 
         mainArea = `
           <div class="max-w-4xl mx-auto space-y-6">
-            <!-- BẢNG ĐIỂM TỔNG KẾT -->
             <div class="bg-gradient-to-r from-blue-800 to-indigo-900 text-white p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-6">
               <div class="space-y-1.5 text-center sm:text-left">
                 <span class="bg-white/20 text-xs px-3 py-1 rounded-full font-semibold">Đã nộp bài thành công</span>
@@ -1267,7 +1196,6 @@
               <button onclick="navTo('exam_list')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700">Quay lại danh sách đề</button>
             </div>
 
-            <!-- CHI TIẾT TỪNG CÂU TRẮC NGHIỆM -->
             <div class="space-y-4">
               ${qData.mcq.map((q, idx) => {
                 const userChoice = ans.mcq[idx];
@@ -1296,46 +1224,6 @@
                   </div>
                 `;
               }).join('')}
-
-              <!-- CHI TIẾT ĐÚNG SAI -->
-              ${qData.tf.map((q, qIdx) => `
-                <div class="bg-white p-5 rounded-2xl border-l-4 border-indigo-500 shadow-sm space-y-3">
-                  <div class="flex justify-between items-start gap-2">
-                    <div class="font-semibold text-sm text-gray-900"><b>Câu ${qData.mcq.length + qIdx + 1} (Đúng/Sai):</b> ${q.text}</div>
-                    <button onclick="askAIExplainQuestion('${q.text.replace(/'/g, "\\'")}')" class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition">
-                      <i class="fa-solid fa-robot mr-1"></i> Hỏi AI
-                    </button>
-                  </div>
-                  <div class="space-y-1.5 text-xs">
-                    ${q.items.map((item, iIdx) => {
-                      const uVal = ans.tf[qIdx]?.[iIdx];
-                      const ok = uVal === item.correct;
-                      return `
-                        <div class="p-2.5 rounded-lg border flex justify-between items-center ${ok ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}">
-                          <span>${item.label}</span>
-                          <span class="font-bold shrink-0 ml-2">${ok ? '✅' : '❌'} Bạn chọn: ${uVal === undefined ? 'Trống' : (uVal ? 'Đúng' : 'Sai')} (Đáp án: ${item.correct ? 'Đúng' : 'Sai'})</span>
-                        </div>
-                      `;
-                    }).join('')}
-                  </div>
-                  ${q.explanation ? `<div class="bg-amber-50 p-3 rounded-xl text-xs text-amber-900 border border-amber-200"><b>💡 Lời giải:</b> ${q.explanation}</div>` : ''}
-                </div>
-              `).join('')}
-
-              <!-- CHI TIẾT TRẢ LỜI NGẮN -->
-              ${qData.sa.map((q, idx) => {
-                const uVal = (ans.sa[idx] || '').trim();
-                const ok = uVal.replace(',', '.') === (q.correct || '').trim().replace(',', '.');
-                return `
-                  <div class="bg-white p-5 rounded-2xl border-l-4 ${ok ? 'border-emerald-500' : 'border-red-500'} shadow-sm space-y-2">
-                    <div class="font-semibold text-sm text-gray-900"><b>Câu ${qData.mcq.length + qData.tf.length + idx + 1} (Trả lời ngắn):</b> ${q.text}</div>
-                    <div class="text-xs">
-                      Bạn trả lời: <b class="${ok ? 'text-emerald-600' : 'text-red-600'}">${uVal || '(Bỏ trống)'}</b> | Đáp án đúng: <b class="text-emerald-700">${q.correct}</b>
-                    </div>
-                    ${q.explanation ? `<div class="bg-amber-50 p-3 rounded-xl text-xs text-amber-900 border border-amber-200"><b>💡 Lời giải:</b> ${q.explanation}</div>` : ''}
-                  </div>
-                `;
-              }).join('')}
             </div>
           </div>
         `;
@@ -1355,7 +1243,7 @@
               <button onclick="exportQuestionBank()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-indigo-700"><i class="fa-solid fa-file-export mr-1.5"></i> Xuất File Ngân Hàng (.json)</button>
             </div>
             <div class="space-y-3">
-              ${myAppState.exams.map(ex => (ex.mcq || []).map((q, i) => `
+              ${myAppState.exams.map(ex => (ex.mcq || []).map((q) => `
                 <div class="p-3.5 rounded-xl border bg-gray-50/70 flex justify-between items-start gap-3">
                   <div class="text-xs sm:text-sm">
                     <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded mr-1">${ex.chapter || 'Toán 9'}</span>
@@ -1482,43 +1370,86 @@
           </main>
         </div>
 
-        <!-- MODAL UPLOAD ĐỀ THI & ĐÁP ÁN CHO TỪNG CHƯƠNG (MỚI) -->
-        <div id="modalChapterDoc" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded-2xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+        <!-- MODAL ĐĂNG CHỦ ĐỀ / BÀI GIẢNG MỚI (CÓ CẢ FILE ĐỀ & FILE ĐÁP ÁN) -->
+        <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-2xl p-6 max-w-lg w-full space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
-              <h3 class="font-bold text-lg text-purple-800"><i class="fa-solid fa-file-circle-plus mr-1.5"></i> Đăng Đề Thi & Đáp Án Theo Chương</h3>
-              <button onclick="closeModal('modalChapterDoc')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+              <h3 class="font-bold text-lg text-blue-800"><i class="fa-solid fa-book-open mr-1.5"></i> Đăng Chủ Đề Mới (Đề & Đáp Án)</h3>
+              <button onclick="closeModal('modalLec')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="formAddChapterDoc" class="space-y-3 text-xs">
+            <form id="formAddLec" class="space-y-3 text-xs">
               <div>
-                <label class="block font-semibold mb-1">Chọn Chương / Chuyên đề</label>
-                <select id="docChapterSelect" class="w-full p-2.5 border rounded-xl bg-white">
-                  ${allChaptersList.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
+                <label class="block font-semibold mb-1">Tên Chủ Đề / Bài Học</label>
+                <input type="text" id="lecTitle" required placeholder="VD: CHỦ ĐỀ 3. PHƯƠNG TRÌNH QUY VỀ PHƯƠNG TRÌNH BẬC NHẤT MỘT ẨN" class="w-full p-2.5 border rounded-xl">
               </div>
-              <div>
-                <label class="block font-semibold mb-1">Tên bộ đề (Ví dụ: Đề ôn tập Chương I - Số 01)</label>
-                <input type="text" id="docTitleInput" required placeholder="Nhập tên đề thi..." class="w-full p-2.5 border rounded-xl">
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-50 p-3 rounded-xl border border-purple-100">
+              <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="block font-bold text-blue-800 mb-1"><i class="fa-solid fa-file-pdf mr-1"></i> File Đề Thi (PDF/Word/Ảnh)</label>
-                  <input type="file" id="docExamFile" class="w-full p-1.5 border rounded bg-white">
+                  <label class="block font-semibold mb-1">Môn học</label>
+                  <select id="lecSubject" class="w-full p-2.5 border rounded-xl bg-white">
+                    <option value="Toán 9">Toán 9</option>
+                    <option value="Toán 8">Toán 8</option>
+                    <option value="Toán 7">Toán 7</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold mb-1">Thuộc Chương</label>
+                  <select id="lecChapter" class="w-full p-2.5 border rounded-xl bg-white">
+                    ${allChaptersList.map(c => `<option value="${c}">${c}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+
+              <!-- 2 Ô CHỌN FILE ĐỀ VÀ FILE ĐÁP ÁN -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 border p-3 rounded-xl bg-blue-50/60">
+                <div>
+                  <label class="block font-bold text-blue-800 mb-1"><i class="fa-solid fa-file-pdf mr-1"></i> File Đề Bài (PDF/Word/Ảnh)</label>
+                  <input type="file" id="lecFileInput" class="w-full p-1.5 border rounded bg-white">
                 </div>
                 <div>
                   <label class="block font-bold text-emerald-800 mb-1"><i class="fa-solid fa-file-circle-check mr-1"></i> File Đáp Án Chi Tiết</label>
-                  <input type="file" id="docAnswerFile" class="w-full p-1.5 border rounded bg-white">
+                  <input type="file" id="lecSolutionInput" class="w-full p-1.5 border rounded bg-white">
                 </div>
               </div>
+
+              <div>
+                <label class="block font-semibold text-gray-700 mb-1">Link Video bài giảng (YouTube - tùy chọn)</label>
+                <input type="text" id="lecVideoInput" placeholder="https://youtube.com/..." class="w-full p-2.5 border rounded-xl bg-white">
+              </div>
+
               <div class="flex justify-end gap-2 pt-2 border-t">
-                <button type="button" onclick="closeModal('modalChapterDoc')" class="px-4 py-2 border rounded-xl">Hủy</button>
-                <button type="submit" class="bg-purple-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-purple-700">Lưu Đề & Đáp Án</button>
+                <button type="button" onclick="closeModal('modalLec')" class="px-4 py-2 border rounded-xl">Hủy</button>
+                <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-blue-700">Lưu Chủ Đề</button>
               </div>
             </form>
           </div>
         </div>
 
-        <!-- MODAL TẠO ĐỀ THI ONLINE CHUẨN AZOTA (MỚI) -->
+        <!-- MODAL BỔ SUNG / CẬP NHẬT FILE ĐỀ & ĐÁP ÁN CHO CHỦ ĐỀ ĐÃ CÓ -->
+        <div id="modalUpdateLecFiles" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-2">
+              <h3 class="font-bold text-base text-amber-800"><i class="fa-solid fa-upload mr-1.5"></i> Cập Nhật File Đề & Đáp Án</h3>
+              <button onclick="closeModal('modalUpdateLecFiles')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="bg-amber-50 p-2.5 rounded-xl text-xs font-bold text-amber-900 border border-amber-200" id="editLecTitleLabel"></div>
+            <form id="formUpdateLecFiles" class="space-y-3 text-xs">
+              <div>
+                <label class="block font-bold text-blue-800 mb-1"><i class="fa-solid fa-file-pdf mr-1"></i> Chọn File Đề mới (bỏ trống nếu giữ nguyên)</label>
+                <input type="file" id="updExamFileInput" class="w-full p-2 border rounded-xl bg-white">
+              </div>
+              <div>
+                <label class="block font-bold text-emerald-800 mb-1"><i class="fa-solid fa-file-circle-check mr-1"></i> Chọn File Đáp Án mới (bỏ trống nếu giữ nguyên)</label>
+                <input type="file" id="updSolutionFileInput" class="w-full p-2 border rounded-xl bg-white">
+              </div>
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onclick="closeModal('modalUpdateLecFiles')" class="px-4 py-2 border rounded-xl">Hủy</button>
+                <button type="submit" class="bg-amber-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-amber-700">Cập Nhật Ngay</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- MODAL TẠO ĐỀ THI ONLINE CHUẨN AZOTA -->
         <div id="modalCreateAzotaExam" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
           <div class="bg-white rounded-2xl p-6 max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
@@ -1559,7 +1490,6 @@
                   <button type="button" onclick="addAzotaQuestionRow()" class="bg-emerald-600 text-white px-3 py-1 rounded-lg font-bold hover:bg-emerald-700">+ Thêm câu hỏi</button>
                 </div>
                 <div id="azQuestionsBuilder" class="space-y-3 max-h-60 overflow-y-auto pr-1">
-                  <!-- Mặc định 1 câu mẫu -->
                   <div class="az-q-item p-3 border rounded-xl bg-gray-50 space-y-2">
                     <input type="text" placeholder="Nhập nội dung câu hỏi 1 (Hỗ trợ LaTeX $x^2$)..." class="az-q-text w-full p-2 border rounded-lg bg-white font-medium" required>
                     <div class="grid grid-cols-2 gap-2">
@@ -1654,55 +1584,10 @@
             </form>
           </div>
         </div>
-
-        <!-- MODAL ĐĂNG BÀI GIẢNG -->
-        <div id="modalLec" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded-2xl p-6 max-w-lg w-full space-y-3 shadow-xl max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg text-blue-800"><i class="fa-solid fa-book-open mr-1.5"></i> Đăng Bài Giảng Mới</h3>
-            <form id="formAddLec" class="space-y-3 text-xs">
-              <div>
-                <label class="block font-semibold mb-1">Tên bài học</label>
-                <input type="text" id="lecTitle" required class="w-full p-2.5 border rounded-xl">
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block font-semibold mb-1">Môn học</label>
-                  <select id="lecSubject" class="w-full p-2.5 border rounded-xl bg-white">
-                    <option value="Toán 9">Toán 9</option>
-                    <option value="Toán 8">Toán 8</option>
-                    <option value="Toán 7">Toán 7</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block font-semibold mb-1">Thuộc chuyên đề / Chương</label>
-                  <select id="lecChapter" class="w-full p-2.5 border rounded-xl bg-white">
-                    ${allChaptersList.map(c => `<option value="${c}">${c}</option>`).join('')}
-                  </select>
-                </div>
-              </div>
-              <div class="space-y-2 border p-3 rounded-xl bg-blue-50/50">
-                <div>
-                  <label class="block font-semibold text-gray-700">File tài liệu (PDF / Ảnh)</label>
-                  <input type="file" id="lecFileInput" accept="application/pdf,image/*" class="w-full p-1.5 border rounded bg-white">
-                </div>
-                <div>
-                  <label class="block font-semibold text-gray-700">Link Video bài giảng (YouTube)</label>
-                  <input type="text" id="lecVideoInput" placeholder="https://youtube.com/..." class="w-full p-2 border rounded bg-white">
-                </div>
-              </div>
-              <div class="flex justify-end gap-2 pt-2 border-t">
-                <button type="button" onclick="closeModal('modalLec')" class="px-3 py-1.5 border rounded-lg">Hủy</button>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-medium hover:bg-blue-700">Đăng Bài Giảng</button>
-              </div>
-            </form>
-          </div>
-        </div>
       `;
 
-      // Bind Event Forms
       bindAllForms();
 
-      // Re-render MathJax sau khi cập nhật DOM
       if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise().catch(() => {});
       }
@@ -1749,39 +1634,78 @@
     }
 
     function bindAllForms() {
-      // Form đăng Đề & Đáp án theo chương
-      const fDoc = document.getElementById('formAddChapterDoc');
-      if (fDoc) {
-        fDoc.onsubmit = async (e) => {
+      // Đăng chủ đề mới (gồm cả File Đề & File Đáp Án)
+      const fAddLec = document.getElementById('formAddLec');
+      if (fAddLec) {
+        fAddLec.onsubmit = async (e) => {
           e.preventDefault();
-          const chapter = document.getElementById('docChapterSelect').value;
-          const title = document.getElementById('docTitleInput').value.trim();
-          const examFile = document.getElementById('docExamFile').files[0];
-          const ansFile = document.getElementById('docAnswerFile').files[0];
+          const examFile = document.getElementById('lecFileInput').files[0];
+          const solFile = document.getElementById('lecSolutionInput').files[0];
+          const videoInputVal = document.getElementById('lecVideoInput').value.trim();
 
-          const [exData, ansData] = await Promise.all([
+          const [exData, solData] = await Promise.all([
             readFileAsDataURL(examFile),
-            readFileAsDataURL(ansFile)
+            readFileAsDataURL(solFile)
           ]);
 
-          db.ref('chapter_docs').push({
-            chapter,
-            title,
-            examFileUrl: exData.url,
-            examFileName: exData.name,
-            answerFileUrl: ansData.url,
-            answerFileName: ansData.name,
+          db.ref('lectures').push({
+            title: document.getElementById('lecTitle').value.trim(),
+            subject: document.getElementById('lecSubject').value,
+            chapter: document.getElementById('lecChapter').value,
+            fileUrl: exData.url,
+            fileName: exData.name,
+            solutionUrl: solData.url,
+            solutionName: solData.name,
+            videoUrl: videoInputVal,
+            instructor: 'Hai Ton',
             date: new Date().toISOString().split('T')[0]
           }, err => {
+            if (!err) { alert('Đăng chủ đề cùng Đề & Đáp án thành công!'); closeModal('modalLec'); }
+          });
+        };
+      }
+
+      // Cập nhật / Bổ sung File Đề & Đáp Án cho chủ đề đã có
+      const fUpdLec = document.getElementById('formUpdateLecFiles');
+      if (fUpdLec) {
+        fUpdLec.onsubmit = async (e) => {
+          e.preventDefault();
+          const id = myAppState.editingLectureId;
+          if (!id) return;
+
+          const examFile = document.getElementById('updExamFileInput').files[0];
+          const solFile = document.getElementById('updSolutionFileInput').files[0];
+
+          const [exData, solData] = await Promise.all([
+            readFileAsDataURL(examFile),
+            readFileAsDataURL(solFile)
+          ]);
+
+          const updates = {};
+          if (exData.url) {
+            updates.fileUrl = exData.url;
+            updates.fileName = exData.name;
+          }
+          if (solData.url) {
+            updates.solutionUrl = solData.url;
+            updates.solutionName = solData.name;
+          }
+
+          if (Object.keys(updates).length === 0) {
+            alert('Thầy/cô chưa chọn file mới nào!');
+            return;
+          }
+
+          db.ref('lectures/' + id).update(updates, err => {
             if (!err) {
-              alert('Đã tải lên Đề thi & Đáp án cho chương thành công!');
-              closeModal('modalChapterDoc');
+              alert('Đã cập nhật file Đề / Đáp án thành công!');
+              closeModal('modalUpdateLecFiles');
             }
           });
         };
       }
 
-      // Form tạo đề thi Azota
+      // Tạo đề thi Azota
       const fAz = document.getElementById('formCreateAzota');
       if (fAz) {
         fAz.onsubmit = (e) => {
@@ -1867,29 +1791,6 @@
           }
         };
       }
-
-      const fAddLec = document.getElementById('formAddLec');
-      if (fAddLec) {
-        fAddLec.onsubmit = async (e) => {
-          e.preventDefault();
-          const fileInput = document.getElementById('lecFileInput').files[0];
-          const videoInputVal = document.getElementById('lecVideoInput').value.trim();
-          const fileData = await readFileAsDataURL(fileInput);
-
-          db.ref('lectures').push({
-            title: document.getElementById('lecTitle').value,
-            subject: document.getElementById('lecSubject').value,
-            chapter: document.getElementById('lecChapter').value,
-            fileUrl: fileData.url,
-            fileName: fileData.name,
-            videoUrl: videoInputVal,
-            instructor: 'Hai Ton',
-            date: new Date().toISOString().split('T')[0]
-          }, err => {
-            if (!err) { alert('Đăng bài giảng thành công!'); closeModal('modalLec'); }
-          });
-        };
-      }
     }
 
     function navTo(v) { 
@@ -1903,7 +1804,7 @@
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     // ==========================================
-    // TRỢ GIẢNG AI TOÁN 9 THÔNG MINH
+    // TRỢ GIẢNG AI TOÁN 9
     // ==========================================
     function quickAIPrompt(text) {
       document.getElementById('aiChatInput').value = text;
@@ -1925,13 +1826,10 @@
     function builtInMathHelper(query) {
       const q = query.toLowerCase();
       if (q.includes('vi-ét') || q.includes('viet')) {
-        return "📌 **Hệ thức Vi-ét (Chương VI - Toán 9):**\nNếu phương trình bậc hai $ax^2 + bx + c = 0$ ($a \\neq 0$) có hai nghiệm $x_1, x_2$ (tức $\\Delta \\ge 0$) thì:\n• Tổng hai nghiệm: $S = x_1 + x_2 = -\\frac{b}{a}$\n• Tích hai nghiệm: $P = x_1 \\cdot x_2 = \\frac{c}{a}$\n\n💡 **Mẹo nhẩm nghiệm nhanh:**\n- Nếu $a + b + c = 0 \\Rightarrow x_1 = 1; x_2 = \\frac{c}{a}$\n- Nếu $a - b + c = 0 \\Rightarrow x_1 = -1; x_2 = -\\frac{c}{a}$";
+        return "📌 **Hệ thức Vi-ét (Chương VI - Toán 9):**\nNếu phương trình bậc hai $ax^2 + bx + c = 0$ ($a \\neq 0$) có hai nghiệm $x_1, x_2$ (tức $\\Delta \\ge 0$) thì:\n• Tổng hai nghiệm: $S = x_1 + x_2 = -\\frac{b}{a}$\n• Tích hai nghiệm: $P = x_1 \\cdot x_2 = \\frac{c}{a}$";
       }
       if (q.includes('x^2 - 5x + 6')) {
-        return "📝 **Hướng dẫn giải chi tiết:** $x^2 - 5x + 6 = 0$\n\n**Bước 1:** Xác định hệ số $a = 1, b = -5, c = 6$.\n**Bước 2:** Tính biệt thức $\\Delta = b^2 - 4ac = (-5)^2 - 4 \\cdot 1 \\cdot 6 = 25 - 24 = 1 > 0$.\n**Bước 3:** Vì $\\Delta > 0$ nên phương trình có 2 nghiệm phân biệt:\n• $x_1 = \\frac{5 + \\sqrt{1}}{2} = 3$\n• $x_2 = \\frac{5 - \\sqrt{1}}{2} = 2$\n\n✅ **Kết luận:** Tập nghiệm $S = \\{2; 3\\}$.";
-      }
-      if (q.includes('căn bậc hai')) {
-        return "📚 **2 Bài tập trắc nghiệm ôn tập Căn bậc hai:**\n\n**Câu 1:** Điều kiện xác định của biểu thức $\\sqrt{2x - 4}$ là:\nA. $x > 2$   |   B. $x \\ge 2$   |   C. $x \\le 2$   |   D. $x \\ge -2$\n*(Đáp án đúng: B, vì $2x - 4 \\ge 0 \\Leftrightarrow x \\ge 2$)*\n\n**Câu 2:** Giá trị của biểu thức $\\sqrt{(3 - \\sqrt{10})^2}$ bằng:\nA. $3 - \\sqrt{10}$   |   B. $\\sqrt{10} - 3$   |   C. $7$   |   D. $-7$\n*(Đáp án đúng: B, vì $\\sqrt{10} > 3$ nên $|3 - \\sqrt{10}| = \\sqrt{10} - 3$)*";
+        return "📝 **Hướng dẫn giải chi tiết:** $x^2 - 5x + 6 = 0$\n• $\\Delta = (-5)^2 - 4 \\cdot 1 \\cdot 6 = 1 > 0$\n• $x_1 = 3; x_2 = 2$\n✅ Tập nghiệm $S = \\{2; 3\\}$.";
       }
       return null;
     }
@@ -1961,14 +1859,13 @@
       `;
       msgContainer.scrollTop = msgContainer.scrollHeight;
 
-      // Kiểm tra API Key hoặc dùng bộ giải Toán 9 tích hợp sẵn nếu chưa điền key
       const apiKey = "YOUR_GEMINI_API_KEY";
       let aiReply = "";
 
       if (apiKey === "YOUR_GEMINI_API_KEY") {
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 500));
         aiReply = builtInMathHelper(text) || 
-          `Mình đã nhận được đề bài: **"${text}"**.\n\n**Phương pháp giải gợi ý:**\n1. Xác định điều kiện xác định (nếu có căn thức hoặc mẫu thức).\n2. Biến đổi tương đương về dạng phương trình/hệ phương trình cơ bản.\n3. Đối chiếu điều kiện và kết luận nghiệm.\n\n*(Lưu ý: Thầy/cô hãy dán Gemini API Key thật vào biến \`apiKey\` trong code để AI giải tự động mọi đề toán bất kỳ nhé!)*`;
+          `Mình đã nhận được đề bài: **"${text}"**.\n\n**Phương pháp giải gợi ý:**\n1. Đặt điều kiện xác định (nếu có mẫu thức hoặc căn thức).\n2. Biến đổi tương đương về dạng phương trình cơ bản.\n3. Đối chiếu điều kiện và kết luận nghiệm.\n\n*(Thầy/cô dán Gemini API Key thật vào biến \`apiKey\` trong code để AI giải tự động mọi bài toán nhé!)*`;
       } else {
         try {
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
@@ -1977,13 +1874,13 @@
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: "Bạn là Trợ Giảng AI chuyên môn Toán lớp 9 (chương trình SGK Kết nối tri thức). Hãy trình bày lời giải rõ ràng từng bước, dễ hiểu, dùng ký hiệu LaTeX $...$ cho công thức toán. Câu hỏi của học sinh: " + text
+                  text: "Bạn là Trợ Giảng AI chuyên môn Toán lớp 9. Hãy trình bày lời giải rõ ràng từng bước, dùng ký hiệu LaTeX $...$ cho công thức toán. Câu hỏi: " + text
                 }]
               }]
             })
           });
           const data = await response.json();
-          aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, mình chưa thể phân tích câu hỏi này. Bạn hãy kiểm tra lại đề bài nhé!";
+          aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, mình chưa thể phân tích câu hỏi này.";
         } catch (err) {
           aiReply = "Lỗi kết nối máy chủ AI. Vui lòng thử lại sau!";
         }
